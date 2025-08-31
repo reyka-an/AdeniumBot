@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Adenium.Models;
 using Adenium.Services;
 using Adenium.Utils;
+using System.Security.Cryptography;
 
 namespace Adenium.Handlers
 {
@@ -11,6 +12,30 @@ namespace Adenium.Handlers
         private readonly DiscordSocketClient _client;
         private readonly SessionStore _store;
         private readonly SessionLifecycle _lifecycle;
+        
+        private static readonly string[] JoinPhrases = new[]
+        {
+            "Ты в игре!",
+            "Ура! Ты смог... наконец-то",
+            "Ты справился! Твоя мама может тобой гордится",
+            "Записался? Отлично, теперь назад дороги нет",
+            "Поздравляю, твой IQ официально выше нуля — кнопку нашёл.",
+            "Считай, что подписал себе приговор.",
+            "Ты в игре! Осталось только научиться играть",
+            "Вступил? Отлично, теперь у нас меньше шансов на победу."
+        };
+        private static readonly string[] AlreadyJoinedPhrases = new[]
+        {
+            "У тебя деменция? Ты уже нажимал эту кнопку",
+            "Ты уже жмал ><",
+            "Серьёзно? Ещё раз?",
+            "Думаешь, два клика дадут двойной шанс? Не-а.",
+            "Эта кнопка не банкомат — деньги не выдаст.",
+            "Тебе нравится щёлкать? Оставь это для игры?",
+            "Ты уже тут. Расслабь палец, герой.",
+            "Дважды участвовать нельзя, даже если очень хочется.",
+            "Ты уже в игре. Хочешь быть сразу за двух?"
+        };
 
         public ButtonHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle)
         {
@@ -34,7 +59,11 @@ namespace Adenium.Handlers
                     break;
             }
         }
-
+        private static string GetRandomPhrase(string[] pool, int count)
+        {
+            var index = RandomNumberGenerator.GetInt32(pool.Length); 
+            return string.Format(pool[index], count);
+        }
         private async Task HandleJoin(string[] parts, SocketMessageComponent component)
         {
             if (parts.Length < 2) { await component.RespondAsync("Некорректная кнопка.", ephemeral: true); return; }
@@ -42,7 +71,7 @@ namespace Adenium.Handlers
 
             if (!_store.TryGetSession(sid, out var s))
             {
-                await component.RespondAsync("Эта сессия уже завершена или не найдена.", ephemeral: true);
+                await component.RespondAsync("Что то тут не так... знать бы что", ephemeral: true);
                 return;
             }
 
@@ -52,9 +81,14 @@ namespace Adenium.Handlers
                 added = s.Participants.Add(userId);
 
             var nowCount = s.Participants.Count;
-            await component.RespondAsync(added
-                ? $"Готово! Сейчас участников: {nowCount}"
-                : $"Ты уже жмакал. Сейчас участников: {nowCount}", ephemeral: true);
+            if (added)
+            {
+                await component.RespondAsync(GetRandomPhrase(JoinPhrases, s.Participants.Count), ephemeral: true);
+            }
+            else
+            {
+                await component.RespondAsync(GetRandomPhrase(AlreadyJoinedPhrases, s.Participants.Count), ephemeral: true);
+            }
 
             try { await UpdateLobbyMessageAsync(sid, s); }
             catch (Exception ex) { Console.WriteLine($"UpdateLobbyMessage error: {ex}"); }
@@ -72,18 +106,18 @@ namespace Adenium.Handlers
 
             if (!_store.TryGetSession(sid, out var s))
             {
-                await component.RespondAsync("Эта сессия уже завершена или не найдена.", ephemeral: true);
+                await component.RespondAsync("Тут уже как бы все, поезд ушел", ephemeral: true);
                 return;
             }
 
             if (component.User.Id != ownerId)
             {
-                await component.RespondAsync("Только создатель голосования может нажать «Старт».", ephemeral: true);
+                await component.RespondAsync("Сиди молча и не жми лишних кнопочек", ephemeral: true);
                 return;
             }
 
             var current = s.Participants.ToList();
-            if (current.Count == 0)
+            if (current.Count <= 2)
             {
                 await component.RespondAsync("Некого распределять.", ephemeral: true);
                 return;
