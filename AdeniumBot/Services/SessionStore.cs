@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace YourBot.Services
+namespace Adenium.Services
 {
     public class SessionStore
     {

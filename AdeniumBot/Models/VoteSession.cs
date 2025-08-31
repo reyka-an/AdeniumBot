@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-
-namespace YourBot.Models
+namespace Adenium.Models
 {
     public class VoteSession
     {

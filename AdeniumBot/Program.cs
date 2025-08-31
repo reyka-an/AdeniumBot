@@ -1,10 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Adenium.Handlers;
+using Adenium.Services;
 
-using YourBot.Handlers;
-using YourBot.Services;
-
-namespace YourBot
+namespace Adenium
 {
     class Program
     {
@@ -13,6 +12,7 @@ namespace YourBot
         private CommandRegistrar _registrar = default!;
         private StartCommandHandler _startHandler = default!;
         private ButtonHandler _buttonHandler = default!;
+        private SessionLifecycle _lifecycle = default!;
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -28,8 +28,9 @@ namespace YourBot
             
             _sessions = new SessionStore();
             _registrar = new CommandRegistrar(_client);
-            _startHandler = new StartCommandHandler(_client, _sessions);
-            _buttonHandler = new ButtonHandler(_client, _sessions);
+            _lifecycle = new SessionLifecycle(_client, _sessions);
+            _startHandler = new StartCommandHandler(_client, _sessions, _lifecycle);
+            _buttonHandler = new ButtonHandler(_client, _sessions, _lifecycle);
 
             _client.Ready += _registrar.OnReadyAsync;
             _client.SlashCommandExecuted += _startHandler.OnSlashCommandAsync;

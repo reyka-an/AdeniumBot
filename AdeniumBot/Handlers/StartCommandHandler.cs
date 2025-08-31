@@ -1,9 +1,8 @@
-using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using YourBot.Services;
+using Adenium.Services;
 
-namespace YourBot.Handlers
+namespace Adenium.Handlers
 {
     public class StartCommandHandler
     {
@@ -11,10 +10,11 @@ namespace YourBot.Handlers
         private readonly SessionStore _store;
         private readonly SessionLifecycle _lifecycle;
 
-        public StartCommandHandler(DiscordSocketClient client, SessionStore store)
+        public StartCommandHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle)
         {
             _client = client;
             _store = store;
+            _lifecycle = lifecycle;
         }
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
@@ -23,7 +23,7 @@ namespace YourBot.Handlers
 
             var channelId = (command.Channel as ISocketMessageChannel)!.Id;
 
-            if (_store.TryGetSessionByChannel(channelId, out var existingSid))
+            if (_store.TryGetSessionByChannel(channelId, out _))
             {
                 await command.RespondAsync("В этом канале уже идёт набор.", ephemeral: true);
                 return;
@@ -40,28 +40,18 @@ namespace YourBot.Handlers
                 .WithButton(label: "Старт", customId: $"begin:{sessionId}:{ownerId}", style: ButtonStyle.Primary)
                 .Build();
 
-            string BuildLobbyText()
-            {
-                int count;
-                lock (session.SyncRoot) count = session.Participants.Count;
-                return "Нажмите на кнопку, чтобы принять участие в распределении на команды.\n" +
-                       $"Участников: **{count}**";
-            }
+            await command.RespondAsync(
+                "Нажмите на кнопку, чтобы принять участие в распределении на команды.\nУчастников: **1**",
+                components: components
+            );
 
-            try
-            {
-                await command.RespondAsync(BuildLobbyText(), components: components);
-                var orig = await command.GetOriginalResponseAsync();
+            var orig = await command.GetOriginalResponseAsync();
+            _store.TryBindMessage(sessionId, channelId, orig.Id);
+            
+            _lifecycle.StartAutoTimeout(sessionId, session, TimeSpan.FromMinutes(20));
 
-                _store.TryBindMessage(sessionId, channelId, orig.Id);
-
-                await command.FollowupAsync("Голосование запущено", ephemeral: true);
-            }
-            catch
-            {
-                _store.RemoveByChannel(channelId);
-                throw;
-            }
+            await command.FollowupAsync("Голосование запущено", ephemeral: true);
         }
     }
+    
 }

@@ -1,24 +1,22 @@
-using System;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using YourBot.Models;
-using YourBot.Services;
-using YourBot.Utils;
+using Adenium.Models;
+using Adenium.Services;
+using Adenium.Utils;
 
-namespace YourBot.Handlers
+namespace Adenium.Handlers
 {
     public class ButtonHandler
     {
         private readonly DiscordSocketClient _client;
         private readonly SessionStore _store;
+        private readonly SessionLifecycle _lifecycle;
 
-        public ButtonHandler(DiscordSocketClient client, SessionStore store)
+        public ButtonHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle)
         {
             _client = client;
             _store = store;
+            _lifecycle = lifecycle;
         }
 
         public async Task OnButtonAsync(SocketMessageComponent component)
@@ -105,6 +103,8 @@ namespace YourBot.Handlers
                 m.Components = disabled;
             });
 
+            s.Cts.Cancel();
+            
             _store.RemoveSession(sid);
         }
 

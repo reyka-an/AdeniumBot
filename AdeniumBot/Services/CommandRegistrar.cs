@@ -1,7 +1,7 @@
 using Discord;
 using Discord.WebSocket;
 
-namespace YourBot.Services
+namespace Adenium.Services
 {
     public class CommandRegistrar
     {
