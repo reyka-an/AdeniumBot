@@ -35,6 +35,16 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(start.Build());
                 Console.WriteLine("Зарегистрирована команда /start");
             }
+            if (!cmds.Any(c => c.Name == "профиль"))
+            {
+                var profile = new SlashCommandBuilder()
+                    .WithName("profile")
+                    .WithDescription("Открыть ваш профиль (создастся при первом вызове)");
+                await guild.CreateApplicationCommandAsync(profile.Build());
+                Console.WriteLine("Зарегистрирована команда /profile");
+            }
         }
+        
+        
     }
 }
