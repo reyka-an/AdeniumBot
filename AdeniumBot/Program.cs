@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Adenium.Handlers;
 using Adenium.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Adenium
 {
@@ -35,6 +36,25 @@ namespace Adenium
             _client.Ready += _registrar.OnReadyAsync;
             _client.SlashCommandExecuted += _startHandler.OnSlashCommandAsync;
             _client.ButtonExecuted += _buttonHandler.OnButtonAsync;
+            
+            var conn = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
+            if (!string.IsNullOrWhiteSpace(conn))
+            {
+                try
+                {
+                    using var db = new Adenium.Data.BotDbContext(conn);
+                    db.Database.Migrate();
+                    Console.WriteLine("База данных готова (миграции применены).");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Ошибка миграции: " + ex.Message);
+                }
+            }
+            else
+            {
+                Console.WriteLine("⚠️ Переменная ConnectionStrings__Default не задана, база будет недоступна.");
+            }
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token))

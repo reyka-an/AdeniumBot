@@ -12,7 +12,15 @@
       <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02542" />
       <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02542" />
       <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02542" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.8" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.4-beta1" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     </ItemGroup>
 
 </Project>
