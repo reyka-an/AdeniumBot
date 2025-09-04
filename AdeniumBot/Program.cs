@@ -15,6 +15,7 @@ namespace Adenium
         private ButtonHandler _buttonHandler = default!;
         private SessionLifecycle _lifecycle = default!;
         private ProfileCommandHandler _profileHandler = default!;
+        private RelationsCommandHandler _relationsHandler = default!;
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -34,7 +35,9 @@ namespace Adenium
             _startHandler = new StartCommandHandler(_client, _sessions, _lifecycle);
             _buttonHandler = new ButtonHandler(_client, _sessions, _lifecycle);
             _profileHandler = new ProfileCommandHandler();
-
+            _relationsHandler = new RelationsCommandHandler();
+            
+            _client.SlashCommandExecuted += _relationsHandler.OnSlashCommandAsync;
             _client.Ready += _registrar.OnReadyAsync;
             _client.SlashCommandExecuted += _startHandler.OnSlashCommandAsync;
             _client.ButtonExecuted += _buttonHandler.OnButtonAsync;

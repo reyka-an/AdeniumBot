@@ -44,6 +44,33 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(profile.Build());
                 Console.WriteLine("Зарегистрирована команда /profile");
             }
+            if (!cmds.Any(c => c.Name == "fav"))
+            {
+                var fav = new SlashCommandBuilder()
+                    .WithName("fav")
+                    .WithDescription("Добавить игрока в избранное")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("user")
+                        .WithDescription("Думаешь это взаимно?")
+                        .WithType(ApplicationCommandOptionType.User)
+                        .WithRequired(true));
+                await guild.CreateApplicationCommandAsync(fav.Build());
+                Console.WriteLine("Зарегистрирована команда /fav");
+            }
+
+            if (!cmds.Any(c => c.Name == "block"))
+            {
+                var block = new SlashCommandBuilder()
+                    .WithName("block")
+                    .WithDescription("Добавить игрока в черный список")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("user")
+                        .WithDescription("Больше он тебя не побеспокоит")
+                        .WithType(ApplicationCommandOptionType.User)
+                        .WithRequired(true));
+                await guild.CreateApplicationCommandAsync(block.Build());
+                Console.WriteLine("Зарегистрирована команда /block");
+            }
         }
         
         
