@@ -36,7 +36,7 @@ namespace Adenium
             _buttonHandler   = new ButtonHandler(_client, _sessions, _lifecycle);
             _profileHandler  = new ProfileCommandHandler();
             _relationsHandler= new RelationsCommandHandler();
-            var coinHandler  = new CoinCommandHandler(); 
+            var expHandler  = new ExpCommandHandler(); 
             
             _client.Ready               += _registrar.OnReadyAsync;
             _client.ButtonExecuted      += _buttonHandler.OnButtonAsync;
@@ -44,7 +44,7 @@ namespace Adenium
             _client.SlashCommandExecuted += _startHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _relationsHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _profileHandler.OnSlashCommandAsync;
-            _client.SlashCommandExecuted += coinHandler.OnSlashCommandAsync; 
+            _client.SlashCommandExecuted += expHandler.OnSlashCommandAsync; 
             
             
             var conn = Environment.GetEnvironmentVariable("ConnectionStrings__Default");

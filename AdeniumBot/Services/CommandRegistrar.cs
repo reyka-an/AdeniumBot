@@ -102,10 +102,10 @@ namespace Adenium.Services
                 Console.WriteLine("Зарегистрирована команда /rel (unfav, unblock)");
             }
 
-            if (!cmds.Any(c => c.Name == "coin"))
+            if (!cmds.Any(c => c.Name == "exp"))
             {
-                var coin = new SlashCommandBuilder()
-                    .WithName("coin")
+                var exp = new SlashCommandBuilder()
+                    .WithName("exp")
                     .WithDescription("Управление монетами игроков (только для роли)")
                     .AddOption(new SlashCommandOptionBuilder()
                         .WithName("add")
@@ -150,8 +150,8 @@ namespace Adenium.Services
                             .WithType(ApplicationCommandOptionType.Integer)
                             .WithRequired(true)));
 
-                await guild.CreateApplicationCommandAsync(coin.Build());
-                Console.WriteLine("Зарегистрирована команда /coin (add, remove, set)");
+                await guild.CreateApplicationCommandAsync(exp.Build());
+                Console.WriteLine("Зарегистрирована команда /exp (add, remove, set)");
             }
         }
     }

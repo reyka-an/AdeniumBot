@@ -12,7 +12,6 @@ namespace Adenium.Handlers
         
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
-            
             if (command.CommandName != "profile") return;
 
             await command.DeferAsync(ephemeral: true);
@@ -40,29 +39,27 @@ namespace Adenium.Handlers
                     {
                         DiscordUserId = userId,
                         Username = username,
-                        Coin = 0,
+                        Exp = 0,                     
                         CreatedAt = DateTime.UtcNow
                     };
                     db.PlayerProfiles.Add(profile);
                     await db.SaveChangesAsync();
                 }
+
                 if (profile.Username != username)
                 {
                     profile.Username = username;
                     await db.SaveChangesAsync();
                 }
                 
-                var favCount = await db.FavoriteLinks
-                    .CountAsync(x => x.TargetId == profile.Id);
+                var favCount = await db.FavoriteLinks.CountAsync(x => x.TargetId == profile.Id);
+                var blCount  = await db.BlacklistLinks.CountAsync(x => x.TargetId == profile.Id);
                 
-                var blCount = await db.BlacklistLinks
-                    .CountAsync(x => x.TargetId == profile.Id);
-                
-                var coins = profile.Coin;
+                var exp = profile.Exp;         
                 
                 var embed = new EmbedBuilder()
                     .WithAuthor(command.User)
-                    .WithDescription($"🥇 {coins}   ❤️ {favCount}   ❌ {blCount}")
+                    .WithDescription($"⭐ {exp}   ❤️ {favCount}   ❌ {blCount}")
                     .WithColor(Color.DarkGrey)
                     .WithCurrentTimestamp()
                     .Build();

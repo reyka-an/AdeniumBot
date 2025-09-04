@@ -5,7 +5,7 @@ namespace Adenium.Models
         public int Id { get; set; }
         public long DiscordUserId { get; set; }   
         public string Username { get; set; } = "";
-        public int Coin { get; set; } = 0;
+        public int Exp { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public ICollection<FavoriteLink> Favorites { get; set; } = new List<FavoriteLink>(); 

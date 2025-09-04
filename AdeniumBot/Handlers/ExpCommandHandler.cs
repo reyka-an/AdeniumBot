@@ -2,29 +2,29 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Adenium.Data;
+using Adenium.Models;
 
 namespace Adenium.Handlers
 {
-    public class CoinCommandHandler
+    public class ExpCommandHandler
     {
         private readonly BotDbContextFactory _dbFactory = new();
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
-            if (command.CommandName != "coin") return;
+            if (command.CommandName != "exp") return;
 
             await command.DeferAsync(ephemeral: true);
-            
             if (command.GuildId is null || command.User is not SocketGuildUser guildUser)
             {
                 await command.FollowupAsync("Эта команда доступна только на сервере.", ephemeral: true);
                 return;
             }
             
-            var roleIdStr = Environment.GetEnvironmentVariable("COIN_ROLE_ID");
+            var roleIdStr = Environment.GetEnvironmentVariable("EXP_ROLE_ID");
             if (!ulong.TryParse(roleIdStr, out var requiredRoleId))
             {
-                await command.FollowupAsync("Роль для доступа к команде не настроена. Админ, проверь COIN_ROLE_ID.", ephemeral: true);
+                await command.FollowupAsync("Роль для доступа к команде не настроена. Админ, проверь EXP_ROLE_ID.", ephemeral: true);
                 return;
             }
 
@@ -36,17 +36,17 @@ namespace Adenium.Handlers
             }
 
             var allowNegative = string.Equals(
-                Environment.GetEnvironmentVariable("COIN_ALLOW_NEGATIVE"),
+                Environment.GetEnvironmentVariable("EXP_ALLOW_NEGATIVE"),
                 "true", StringComparison.OrdinalIgnoreCase);
             
             var sub = command.Data.Options.FirstOrDefault();
             if (sub is null)
             {
-                await command.FollowupAsync("Используй: `/coin add|remove|set ...`", ephemeral: true);
+                await command.FollowupAsync("Используй: `/exp add|remove|set ...`", ephemeral: true);
                 return;
             }
 
-            var subName = sub.Name;
+            var subName   = sub.Name;
             var targetUser = sub.Options?.FirstOrDefault(o => o.Name == "user")?.Value as IUser;
             var amountOpt  = sub.Options?.FirstOrDefault(o => o.Name == "amount")?.Value;
             var valueOpt   = sub.Options?.FirstOrDefault(o => o.Name == "value")?.Value;
@@ -63,11 +63,11 @@ namespace Adenium.Handlers
             var profile = await db.PlayerProfiles.FirstOrDefaultAsync(p => p.DiscordUserId == targetDiscordId);
             if (profile is null)
             {
-                profile = new Adenium.Models.PlayerProfile
+                profile = new PlayerProfile
                 {
                     DiscordUserId = targetDiscordId,
                     Username = targetUser.Username,
-                    Coin = 0,
+                    Exp = 0,                        
                     CreatedAt = DateTime.UtcNow
                 };
                 db.PlayerProfiles.Add(profile);
@@ -92,11 +92,11 @@ namespace Adenium.Handlers
                         return;
                     }
 
-                    profile.Coin += amount;
+                    profile.Exp += amount;         
                     await db.SaveChangesAsync();
 
                     await command.FollowupAsync(
-                        $"💰 Начислено **{amount}** монет для {targetUser.Mention}. Теперь у него **{profile.Coin}**.",
+                        $"⭐ Начислено **{amount}** опыта для {targetUser.Mention}. Теперь у него **{profile.Exp}**.",
                         ephemeral: true);
                     break;
                 }
@@ -108,15 +108,15 @@ namespace Adenium.Handlers
                         return;
                     }
 
-                    var newValue = profile.Coin - amount;
+                    var newValue = profile.Exp - amount;  
                     if (!allowNegative && newValue < 0) newValue = 0;
 
-                    var diff = profile.Coin - newValue;
-                    profile.Coin = newValue;
+                    var diff = profile.Exp - newValue;    
+                    profile.Exp = newValue;              
                     await db.SaveChangesAsync();
 
                     await command.FollowupAsync(
-                        $"💸 Списано **{diff}** монет у {targetUser.Mention}. Теперь у него **{profile.Coin}**.",
+                        $"➖ Списано **{diff}** опыта у {targetUser.Mention}. Теперь у него **{profile.Exp}**.",
                         ephemeral: true);
                     break;
                 }
@@ -130,11 +130,11 @@ namespace Adenium.Handlers
 
                     if (!allowNegative && value < 0) value = 0;
 
-                    profile.Coin = value;
+                    profile.Exp = value;                
                     await db.SaveChangesAsync();
 
                     await command.FollowupAsync(
-                        $"🧮 Баланс {targetUser.Mention} установлен на **{profile.Coin}**.",
+                        $"🧮 Опыт {targetUser.Mention} установлен на **{profile.Exp}**.",
                         ephemeral: true);
                     break;
                 }
