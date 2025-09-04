@@ -25,10 +25,7 @@ namespace Adenium
             {
                 GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMembers
             };
-            _client.SlashCommandExecuted += async cmd =>
-            {
-                await new Adenium.Handlers.CoinCommandHandler().OnSlashCommandAsync(cmd);
-            };
+
             _client = new DiscordSocketClient(config);
             _client.Log += msg => { Console.WriteLine(msg.ToString()); return Task.CompletedTask; };
             
