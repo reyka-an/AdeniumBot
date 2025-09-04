@@ -25,10 +25,9 @@ namespace Adenium
             {
                 GatewayIntents = GatewayIntents.Guilds
             };
-
+            var coinHandler = new Adenium.Handlers.CoinCommandHandler();
             _client = new DiscordSocketClient(config);
             _client.Log += msg => { Console.WriteLine(msg.ToString()); return Task.CompletedTask; };
-            
             _sessions = new SessionStore();
             _registrar = new CommandRegistrar(_client);
             _lifecycle = new SessionLifecycle(_client, _sessions);
@@ -36,7 +35,8 @@ namespace Adenium
             _buttonHandler = new ButtonHandler(_client, _sessions, _lifecycle);
             _profileHandler = new ProfileCommandHandler();
             _relationsHandler = new RelationsCommandHandler();
-            
+
+            _client.SlashCommandExecuted += async cmd => { await coinHandler.OnSlashCommandAsync(cmd); };
             _client.SlashCommandExecuted += _relationsHandler.OnSlashCommandAsync;
             _client.Ready += _registrar.OnReadyAsync;
             _client.SlashCommandExecuted += _startHandler.OnSlashCommandAsync;

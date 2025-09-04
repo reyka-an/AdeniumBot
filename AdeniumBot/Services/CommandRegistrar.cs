@@ -14,7 +14,8 @@ namespace Adenium.Services
             var guildIdStr = Environment.GetEnvironmentVariable("GUILD_ID");
             if (!ulong.TryParse(guildIdStr, out var guildId))
             {
-                Console.WriteLine("Задай переменную окружения GUILD_ID с ID сервера, чтобы быстро регистрировать команды.");
+                Console.WriteLine(
+                    "Задай переменную окружения GUILD_ID с ID сервера, чтобы быстро регистрировать команды.");
                 return;
             }
 
@@ -34,8 +35,8 @@ namespace Adenium.Services
                     .WithDescription("Запустить набор участников и распределить на команды");
                 await guild.CreateApplicationCommandAsync(start.Build());
                 Console.WriteLine("Зарегистрирована команда /start");
-                
             }
+
             if (!cmds.Any(c => c.Name == "profile"))
             {
                 var profile = new SlashCommandBuilder()
@@ -44,6 +45,7 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(profile.Build());
                 Console.WriteLine("Зарегистрирована команда /profile");
             }
+
             if (!cmds.Any(c => c.Name == "fav"))
             {
                 var fav = new SlashCommandBuilder()
@@ -71,6 +73,7 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(block.Build());
                 Console.WriteLine("Зарегистрирована команда /block");
             }
+
             if (!cmds.Any(c => c.Name == "rel"))
             {
                 var rel = new SlashCommandBuilder()
@@ -97,9 +100,58 @@ namespace Adenium.Services
 
                 await guild.CreateApplicationCommandAsync(rel.Build());
                 Console.WriteLine("Зарегистрирована команда /rel (unfav, unblock)");
+                if (!cmds.Any(c => c.Name == "coin"))
+                {
+                    var coin = new SlashCommandBuilder()
+                        .WithName("coin")
+                        .WithDescription("Управление монетами игроков (только для роли)")
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("add")
+                            .WithDescription("Начислить монеты игроку")
+                            .WithType(ApplicationCommandOptionType.SubCommand)
+                            .AddOption(new SlashCommandOptionBuilder()
+                                .WithName("user")
+                                .WithDescription("Кому начислить")
+                                .WithType(ApplicationCommandOptionType.User)
+                                .WithRequired(true))
+                            .AddOption(new SlashCommandOptionBuilder()
+                                .WithName("amount")
+                                .WithDescription("Сколько монет добавить")
+                                .WithType(ApplicationCommandOptionType.Integer)
+                                .WithRequired(true)))
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("remove")
+                            .WithDescription("Забрать монеты у игрока")
+                            .WithType(ApplicationCommandOptionType.SubCommand)
+                            .AddOption(new SlashCommandOptionBuilder()
+                                .WithName("user")
+                                .WithDescription("У кого забрать")
+                                .WithType(ApplicationCommandOptionType.User)
+                                .WithRequired(true))
+                            .AddOption(new SlashCommandOptionBuilder()
+                                .WithName("amount")
+                                .WithDescription("Сколько монет забрать")
+                                .WithType(ApplicationCommandOptionType.Integer)
+                                .WithRequired(true)))
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("set")
+                            .WithDescription("Установить точный баланс игрока")
+                            .WithType(ApplicationCommandOptionType.SubCommand)
+                            .AddOption(new SlashCommandOptionBuilder()
+                                .WithName("user")
+                                .WithDescription("Кому установить баланс")
+                                .WithType(ApplicationCommandOptionType.User)
+                                .WithRequired(true))
+                            .AddOption(new SlashCommandOptionBuilder()
+                                .WithName("value")
+                                .WithDescription("Новое значение баланса")
+                                .WithType(ApplicationCommandOptionType.Integer)
+                                .WithRequired(true)));
+
+                    await guild.CreateApplicationCommandAsync(coin.Build());
+                    Console.WriteLine("Зарегистрирована команда /coin (add, remove, set)");
+                }
             }
         }
-        
-        
     }
 }
