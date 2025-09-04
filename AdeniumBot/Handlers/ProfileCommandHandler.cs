@@ -46,10 +46,23 @@ namespace Adenium.Handlers
                     db.PlayerProfiles.Add(profile);
                     await db.SaveChangesAsync();
                 }
-
+                if (profile.Username != username)
+                {
+                    profile.Username = username;
+                    await db.SaveChangesAsync();
+                }
+                
+                var favCount = await db.FavoriteLinks
+                    .CountAsync(x => x.TargetId == profile.Id);
+                
+                var blCount = await db.BlacklistLinks
+                    .CountAsync(x => x.TargetId == profile.Id);
+                
+                var coins = profile.Coin;
+                
                 var embed = new EmbedBuilder()
-                    .WithTitle($"Профиль {command.User.Username}")
-                    .WithDescription("Ага, окей, допустим")
+                    .WithAuthor(command.User)
+                    .WithDescription($"🥇 {coins}   ❤️ {favCount}   ❌ {blCount}")
                     .WithColor(Color.DarkGrey)
                     .WithCurrentTimestamp()
                     .Build();
