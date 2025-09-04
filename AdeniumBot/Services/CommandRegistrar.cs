@@ -71,6 +71,33 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(block.Build());
                 Console.WriteLine("Зарегистрирована команда /block");
             }
+            if (!cmds.Any(c => c.Name == "rel"))
+            {
+                var rel = new SlashCommandBuilder()
+                    .WithName("rel")
+                    .WithDescription("Manage relations (remove)")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("unfav")
+                        .WithDescription("Удалить пользователя из избранного")
+                        .WithType(ApplicationCommandOptionType.SubCommand)
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("user")
+                            .WithDescription("Любовь прошла?")
+                            .WithType(ApplicationCommandOptionType.User)
+                            .WithRequired(true)))
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("unblock")
+                        .WithDescription("Удалить пользователя из черного списка")
+                        .WithType(ApplicationCommandOptionType.SubCommand)
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("user")
+                            .WithDescription("Надеюсь ты уверен в своем решении")
+                            .WithType(ApplicationCommandOptionType.User)
+                            .WithRequired(true)));
+
+                await guild.CreateApplicationCommandAsync(rel.Build());
+                Console.WriteLine("Зарегистрирована команда /rel (unfav, unblock)");
+            }
         }
         
         
