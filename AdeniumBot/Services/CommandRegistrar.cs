@@ -100,6 +100,7 @@ namespace Adenium.Services
 
                 await guild.CreateApplicationCommandAsync(rel.Build());
                 Console.WriteLine("Зарегистрирована команда /rel (unfav, unblock)");
+                
                 if (!cmds.Any(c => c.Name == "coin"))
                 {
                     var coin = new SlashCommandBuilder()
