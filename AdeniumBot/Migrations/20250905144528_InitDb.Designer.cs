@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AdeniumBot.Migrations
 {
     [DbContext(typeof(BotDbContext))]
-    [Migration("20250904180822_RenameCoinToExp")]
-    partial class RenameCoinToExp
+    [Migration("20250905144528_InitDb")]
+    partial class InitDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
