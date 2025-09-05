@@ -7,16 +7,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AdeniumBot.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDb : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "__EFMigrationsHistory");
-            migrationBuilder.DropTable(name: "BlacklistLinks");
-            migrationBuilder.DropTable(name: "FavoriteLinks");
-            migrationBuilder.DropTable(name: "PlayerProfiles");
-            
             migrationBuilder.CreateTable(
                 name: "PlayerProfiles",
                 columns: table => new

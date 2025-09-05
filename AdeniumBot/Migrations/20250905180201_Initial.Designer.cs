@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AdeniumBot.Migrations
 {
     [DbContext(typeof(BotDbContext))]
-    [Migration("20250905144528_InitDb")]
-    partial class InitDb
+    [Migration("20250905180201_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
