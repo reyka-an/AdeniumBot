@@ -16,6 +16,7 @@ namespace Adenium
         private SessionLifecycle _lifecycle = default!;
         private ProfileCommandHandler _profileHandler = default!;
         private RelationsCommandHandler _relationsHandler = default!;
+        private Adenium.Handlers.RoleExpHandler _roleExpHandler = default!;
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -28,7 +29,6 @@ namespace Adenium
 
             _client = new DiscordSocketClient(config);
             _client.Log += msg => { Console.WriteLine(msg.ToString()); return Task.CompletedTask; };
-            
             _sessions   = new SessionStore();
             _registrar  = new CommandRegistrar(_client);
             _lifecycle  = new SessionLifecycle(_client, _sessions);
@@ -36,15 +36,16 @@ namespace Adenium
             _buttonHandler   = new ButtonHandler(_client, _sessions, _lifecycle);
             _profileHandler  = new ProfileCommandHandler();
             _relationsHandler= new RelationsCommandHandler();
+            _roleExpHandler = new Adenium.Handlers.RoleExpHandler();
             var expHandler  = new ExpCommandHandler(); 
             
             _client.Ready               += _registrar.OnReadyAsync;
             _client.ButtonExecuted      += _buttonHandler.OnButtonAsync;
-
             _client.SlashCommandExecuted += _startHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _relationsHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _profileHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += expHandler.OnSlashCommandAsync; 
+            _client.GuildMemberUpdated += _roleExpHandler.OnGuildMemberUpdated;
             
             
             var conn = Environment.GetEnvironmentVariable("ConnectionStrings__Default");

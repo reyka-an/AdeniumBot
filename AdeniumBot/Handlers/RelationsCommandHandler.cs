@@ -1,4 +1,3 @@
-// RelationsCommandHandler.cs
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +13,6 @@ namespace Adenium.Handlers
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
-            // /rel unfav|unblock user:@...
             if (command.CommandName == "rel")
             {
                 await command.DeferAsync(ephemeral: true);
@@ -34,7 +32,7 @@ namespace Adenium.Handlers
                     return;
                 }
 
-                var ownerDiscordId  = (long)command.User.Id;
+                var ownerDiscordId = (long)command.User.Id;
                 var targetDiscordId = (long)targetUser.Id;
 
                 if (ownerDiscordId == targetDiscordId)
@@ -44,7 +42,7 @@ namespace Adenium.Handlers
                 }
 
                 await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
-                
+
                 var owner = await EnsureProfileAsync(db, ownerDiscordId, command.User.Username);
 
                 var target = await db.PlayerProfiles
@@ -87,7 +85,8 @@ namespace Adenium.Handlers
                     {
                         db.BlacklistLinks.Remove(link);
                         await db.SaveChangesAsync();
-                        await command.FollowupAsync($"Ох уже эти детские игры. Сегодня добавил... завтра убрал", ephemeral: true);
+                        await command.FollowupAsync($"Ох уже эти детские игры. Сегодня добавил... завтра убрал",
+                            ephemeral: true);
                     }
                 }
                 else
@@ -97,7 +96,7 @@ namespace Adenium.Handlers
 
                 return;
             }
-            
+
             if (command.CommandName != "fav" && command.CommandName != "block")
                 return;
 
@@ -106,11 +105,12 @@ namespace Adenium.Handlers
             var userOpt = command.Data.Options.FirstOrDefault(o => o.Name == "user")?.Value as IUser;
             if (userOpt is null)
             {
-                await command.FollowupAsync("Укажи пользователя: `/fav user:@ник` или `/block user:@ник`.", ephemeral: true);
+                await command.FollowupAsync("Укажи пользователя: `/fav user:@ник` или `/block user:@ник`.",
+                    ephemeral: true);
                 return;
             }
 
-            var ownerId  = (long)command.User.Id;
+            var ownerId = (long)command.User.Id;
             var targetId = (long)userOpt.Id;
 
             if (ownerId == targetId)
@@ -129,7 +129,8 @@ namespace Adenium.Handlers
                     var exists = await db.FavoriteLinks.AnyAsync(x => x.OwnerId == owner.Id && x.TargetId == target.Id);
                     if (exists)
                     {
-                        await command.FollowupAsync("Хватит, хватит. Я с первого раза поняла что между вами искры", ephemeral: true);
+                        await command.FollowupAsync("Хватит, хватит. Я с первого раза поняла что между вами искры",
+                            ephemeral: true);
                         return;
                     }
 
@@ -139,7 +140,7 @@ namespace Adenium.Handlers
                         await command.FollowupAsync("Не будь ты такой шлюхой, сначала кого то убери ", ephemeral: true);
                         return;
                     }
-                    
+
                     var bl = await db.BlacklistLinks.FindAsync(owner.Id, target.Id);
                     if (bl != null) db.BlacklistLinks.Remove(bl);
 
@@ -149,20 +150,23 @@ namespace Adenium.Handlers
                 }
                 else // /block
                 {
-                    var exists = await db.BlacklistLinks.AnyAsync(x => x.OwnerId == owner.Id && x.TargetId == target.Id);
+                    var exists =
+                        await db.BlacklistLinks.AnyAsync(x => x.OwnerId == owner.Id && x.TargetId == target.Id);
                     if (exists)
                     {
-                        await command.FollowupAsync("Я все понимаю, но дважды его добавить в чс нельзя", ephemeral: true);
+                        await command.FollowupAsync("Я все понимаю, но дважды его добавить в чс нельзя",
+                            ephemeral: true);
                         return;
                     }
 
                     var blCount = await db.BlacklistLinks.CountAsync(x => x.OwnerId == owner.Id);
                     if (blCount >= MaxPerList)
                     {
-                        await command.FollowupAsync("Сколько в тебе негатива, сначала убери кого-то из списка.", ephemeral: true);
+                        await command.FollowupAsync("Сколько в тебе негатива, сначала убери кого-то из списка.",
+                            ephemeral: true);
                         return;
                     }
-                    
+
                     var fav = await db.FavoriteLinks.FindAsync(owner.Id, target.Id);
                     if (fav != null) db.FavoriteLinks.Remove(fav);
 
@@ -172,8 +176,9 @@ namespace Adenium.Handlers
                 }
             }
         }
-        
-        private static async Task<PlayerProfile> EnsureProfileAsync(BotDbContext db, long discordUserId, string usernameFallback)
+
+        private static async Task<PlayerProfile> EnsureProfileAsync(BotDbContext db, long discordUserId,
+            string usernameFallback)
         {
             var existing = await db.PlayerProfiles.FirstOrDefaultAsync(p => p.DiscordUserId == discordUserId);
             if (existing != null)
@@ -183,6 +188,7 @@ namespace Adenium.Handlers
                     existing.Username = usernameFallback;
                     await db.SaveChangesAsync();
                 }
+
                 return existing;
             }
 
