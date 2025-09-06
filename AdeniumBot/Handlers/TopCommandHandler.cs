@@ -2,46 +2,32 @@ using System.Text;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
+using Adenium.Data;
 
 namespace Adenium.Handlers
 {
-
     public sealed class TopCommandHandler
     {
         private readonly DiscordSocketClient _client;
+        private readonly BotDbContextFactory _dbFactory = new();
 
-        public TopCommandHandler(DiscordSocketClient client)
-        {
-            _client = client;
-        }
+        public TopCommandHandler(DiscordSocketClient client) => _client = client;
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
             if (!string.Equals(command.Data.Name, "top", StringComparison.OrdinalIgnoreCase))
                 return;
-            
+
             await command.DeferAsync(ephemeral: false);
-            
-            var conn = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
-            if (string.IsNullOrWhiteSpace(conn))
-            {
-                await command.FollowupAsync("⚠️ База данных недоступна");
-                return;
-            }
-            
-            using var db = new Adenium.Data.BotDbContext(conn);
-            
+
+            await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
+
             var top = await db.PlayerProfiles
                 .AsNoTracking()
-                .OrderByDescending(p => p.Exp) 
-                .ThenBy(p => p.Id)              
+                .OrderByDescending(p => p.Exp)
+                .ThenBy(p => p.Id)
                 .Take(10)
-                .Select(p => new
-                {
-                    UserId = p.DiscordUserId,   
-                    Exp    = p.Exp,             
-                    p.Username           
-                })
+                .Select(p => new { UserId = p.DiscordUserId, p.Exp, p.Username })
                 .ToListAsync();
 
             var eb = new EmbedBuilder()
@@ -64,6 +50,7 @@ namespace Adenium.Handlers
                     sb.AppendLine($"**{rank,2}.** {name} — `{p.Exp}` EXP");
                     rank++;
                 }
+
                 eb.WithDescription(sb.ToString());
             }
 
