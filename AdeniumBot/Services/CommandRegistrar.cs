@@ -11,6 +11,7 @@ namespace Adenium.Services
 
         public async Task OnReadyAsync()
         {
+            
             var guildIdStr = Environment.GetEnvironmentVariable("GUILD_ID");
             if (!ulong.TryParse(guildIdStr, out var guildId))
             {
@@ -152,6 +153,14 @@ namespace Adenium.Services
 
                 await guild.CreateApplicationCommandAsync(exp.Build());
                 Console.WriteLine("Зарегистрирована команда /exp (add, remove, set)");
+            }
+            if (!cmds.Any(c => c.Name == "top"))
+            {
+                var top = new SlashCommandBuilder()
+                    .WithName("top")
+                    .WithDescription("Показать топ-10 игроков по EXP");
+                await guild.CreateApplicationCommandAsync(top.Build());
+                Console.WriteLine("Зарегистрирована команда /top");
             }
         }
     }

@@ -17,6 +17,8 @@ namespace Adenium
         private ProfileCommandHandler _profileHandler = default!;
         private RelationsCommandHandler _relationsHandler = default!;
         private Adenium.Handlers.RoleExpHandler _roleExpHandler = default!;
+        private Adenium.Handlers.TopCommandHandler _topHandler = default!;
+
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -37,6 +39,8 @@ namespace Adenium
             _profileHandler  = new ProfileCommandHandler();
             _relationsHandler= new RelationsCommandHandler();
             _roleExpHandler = new Adenium.Handlers.RoleExpHandler();
+            _topHandler = new Adenium.Handlers.TopCommandHandler(_client);
+
             var expHandler  = new ExpCommandHandler(); 
             
             _client.Ready               += _registrar.OnReadyAsync;
@@ -46,6 +50,7 @@ namespace Adenium
             _client.SlashCommandExecuted += _profileHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += expHandler.OnSlashCommandAsync; 
             _client.GuildMemberUpdated += _roleExpHandler.OnGuildMemberUpdated;
+            _client.SlashCommandExecuted += _topHandler.OnSlashCommandAsync;
             
             
             var conn = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
