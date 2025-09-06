@@ -15,34 +15,64 @@ namespace Adenium.Handlers
             _quests = quests;
         }
 
-        public async Task OnSlashCommandAsync(SocketSlashCommand command)
+public async Task OnSlashCommandAsync(SocketSlashCommand command)
+{
+    if (command.CommandName != "quest") return;
+
+    try
+    {
+        // 1) Ранний ACK → избегаем таймаута
+        await command.DeferAsync(ephemeral: true);
+
+        var sub = command.Data.Options.FirstOrDefault();
+        if (sub?.Name != "done")
         {
-            if (command.CommandName != "quest") return;
-
-            var sub = command.Data.Options.FirstOrDefault();
-            if (sub?.Name != "done") return;
-
-            // Проверка роли-прав на отметку
-            var roleIdStr = Environment.GetEnvironmentVariable("QUEST_MARKER_ROLE_ID");
-            if (!ulong.TryParse(roleIdStr, out var roleId))
-            {
-                await command.RespondAsync("Не настроена переменная окружения **QUEST_MARKER_ROLE_ID**.", ephemeral: true);
-                return;
-            }
-
-            var guildUser = command.User as SocketGuildUser;
-            if (guildUser == null || !guildUser.Roles.Any(r => r.Id == roleId))
-            {
-                await command.RespondAsync("У вас нет роли для отметки выполнения квестов.", ephemeral: true);
-                return;
-            }
-
-            // Параметры
-            var number = (long)(sub.Options.First(o => o.Name == "number").Value);
-            var user = (IUser)(sub.Options.First(o => o.Name == "user").Value);
-
-            var (ok, msg) = await _quests.MarkQuestDoneAsync(user.Id, (int)number, command.User.Id);
-            await command.RespondAsync(msg, ephemeral: !ok ? true : false);
+            await command.FollowupAsync("Неизвестная подкоманда.", ephemeral: true);
+            return;
         }
+
+        // 2) Проверка роли из ENV
+        var roleIdStr = Environment.GetEnvironmentVariable("QUEST_MARKER_ROLE_ID");
+        if (!ulong.TryParse(roleIdStr, out var roleId))
+        {
+            await command.FollowupAsync("Не настроена переменная окружения QUEST_MARKER_ROLE_ID.", ephemeral: true);
+            return;
+        }
+
+        var gu = command.User as SocketGuildUser;
+        if (gu == null || !gu.Roles.Any(r => r.Id == roleId))
+        {
+            await command.FollowupAsync("У вас нет роли для отметки выполнения квестов.", ephemeral: true);
+            return;
+        }
+
+        // 3) Аккуратно достаём аргументы (без First(...), который кидает исключение)
+        int? number = null;
+        IUser? targetUser = null;
+        foreach (var opt in sub.Options)
+        {
+            if (opt.Name == "number" && opt.Value is long n) number = (int)n;
+            else if (opt.Name == "user" && opt.Value is IUser u) targetUser = u;
+        }
+
+        if (number is null || targetUser is null)
+        {
+            await command.FollowupAsync("Нужно указать /quest done number:<число> user:<пользователь>.", ephemeral: true);
+            return;
+        }
+
+        // 4) Вызов сервиса
+        var (ok, msg) = await _quests.MarkQuestDoneAsync(targetUser.Id, number.Value, command.User.Id);
+        await command.FollowupAsync(msg, ephemeral: true);
+    }
+    catch (Exception ex)
+    {
+        // 5) Логи и видимый ответ вместо «приложение не отвечает»
+        Console.WriteLine("Quest command error: " + ex);
+        try { await command.FollowupAsync("Произошла ошибка при обработке команды.", ephemeral: true); }
+        catch { /* уже поздно отвечать — ок */ }
+    }
+}
+
     }
 }
