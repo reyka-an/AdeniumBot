@@ -21,6 +21,8 @@ namespace Adenium.Data
         public DbSet<PlayerProfile> PlayerProfiles => Set<PlayerProfile>();
         public DbSet<FavoriteLink> FavoriteLinks => Set<FavoriteLink>();
         public DbSet<BlacklistLink> BlacklistLinks => Set<BlacklistLink>();
+        public DbSet<Quest> Quests => Set<Quest>();
+        public DbSet<PlayerQuest> PlayerQuests => Set<PlayerQuest>();
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -59,6 +61,28 @@ namespace Adenium.Data
             bl.HasOne(x => x.Owner).WithMany(p => p.Blacklist).HasForeignKey(x => x.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
             bl.HasOne(x => x.Target).WithMany(p => p.BlacklistedBy).HasForeignKey(x => x.TargetId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            // Quests
+            var q = mb.Entity<Quest>();
+            q.ToTable("quests");
+            q.HasKey(x => x.Id);
+            q.HasIndex(x => x.Number).IsUnique();
+            q.Property(x => x.Number).HasColumnName("number");
+            q.Property(x => x.Description).HasColumnName("description");
+            q.Property(x => x.ExpReward).HasColumnName("exp_reward");
+            q.Property(x => x.MaxCompletionsPerPlayer).HasColumnName("max_completions_per_player");
+            q.Property(x => x.IsActive).HasColumnName("is_active");
+
+            // PlayerQuest
+            var pq = mb.Entity<PlayerQuest>();
+            pq.ToTable("player_quests");
+            pq.HasKey(x => new { x.PlayerId, x.QuestId });
+            pq.Property(x => x.CompletedCount).HasColumnName("completed_count");
+            pq.Property(x => x.LastCompletedAt).HasColumnName("last_completed_at");
+            pq.HasOne(x => x.Player).WithMany(p => p.Quests).HasForeignKey(x => x.PlayerId)
+                .OnDelete(DeleteBehavior.Restrict);
+            pq.HasOne(x => x.Quest).WithMany(q => q.PlayerQuests).HasForeignKey(x => x.QuestId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

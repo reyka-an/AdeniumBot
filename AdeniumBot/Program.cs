@@ -71,6 +71,8 @@ namespace Adenium
             {
                 Console.WriteLine("⚠️ Переменная ConnectionStrings__Default не задана, база будет недоступна.");
             }
+            var questService = new QuestService(conn);
+            var questHandler = new QuestCommandHandler(_client, questService);
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token))

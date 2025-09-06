@@ -162,6 +162,30 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(top.Build());
                 Console.WriteLine("Зарегистрирована команда /top");
             }
+            if (!cmds.Any(c => c.Name == "quest"))
+            {
+                var quest = new SlashCommandBuilder()
+                    .WithName("quest")
+                    .WithDescription("Квесты")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("done")
+                        .WithDescription("Отметить выполнение квеста у игрока")
+                        .WithType(ApplicationCommandOptionType.SubCommand)
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("number")
+                            .WithDescription("Номер квеста")
+                            .WithType(ApplicationCommandOptionType.Integer)
+                            .WithRequired(true))
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("user")
+                            .WithDescription("Кто выполнил квест")
+                            .WithType(ApplicationCommandOptionType.User)
+                            .WithRequired(true)));
+
+                await guild.CreateApplicationCommandAsync(quest.Build());
+                Console.WriteLine("Зарегистрирована команда /quest (done)");
+            }
+
         }
     }
 }

@@ -8,6 +8,7 @@ namespace Adenium.Models
         public int Exp { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
+        public ICollection<PlayerQuest> Quests { get; set; } = new List<PlayerQuest>();
         public ICollection<FavoriteLink> Favorites { get; set; } = new List<FavoriteLink>(); 
         public ICollection<FavoriteLink> FavoritedBy { get; set; } = new List<FavoriteLink>(); 
         public ICollection<BlacklistLink> Blacklist { get; set; } = new List<BlacklistLink>(); 
