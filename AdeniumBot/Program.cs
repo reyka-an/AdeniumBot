@@ -61,6 +61,10 @@ namespace Adenium
                     using var db = new Adenium.Data.BotDbContext(conn);
                     db.Database.Migrate();
                     Console.WriteLine("База данных готова (миграции применены).");
+                    
+                    var questService = new QuestService(conn);
+                    var questHandler = new QuestCommandHandler(_client, questService);
+                    _client.SlashCommandExecuted += questHandler.OnSlashCommandAsync;
                 }
                 catch (Exception ex)
                 {
@@ -71,8 +75,6 @@ namespace Adenium
             {
                 Console.WriteLine("⚠️ Переменная ConnectionStrings__Default не задана, база будет недоступна.");
             }
-            var questService = new QuestService(conn);
-            var questHandler = new QuestCommandHandler(_client, questService);
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token))
