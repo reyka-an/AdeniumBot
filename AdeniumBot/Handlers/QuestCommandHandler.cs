@@ -7,9 +7,10 @@ namespace Adenium.Handlers
     public class QuestCommandHandler
     {
         private readonly DiscordSocketClient _client;
-        private readonly QuestService _quests;
+        private readonly IQuestService _quests;
+        
 
-        public QuestCommandHandler(DiscordSocketClient client, QuestService quests)
+        public QuestCommandHandler(DiscordSocketClient client, IQuestService quests)
         {
             _client = client;
             _quests = quests;

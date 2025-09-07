@@ -11,8 +11,8 @@ namespace Adenium.Services
 
         public async Task OnReadyAsync()
         {
-            
             var guildIdStr = Environment.GetEnvironmentVariable("GUILD_ID");
+            
             if (!ulong.TryParse(guildIdStr, out var guildId))
             {
                 Console.WriteLine(
