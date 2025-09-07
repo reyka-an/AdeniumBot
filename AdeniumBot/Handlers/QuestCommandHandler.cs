@@ -19,14 +19,8 @@ namespace Adenium.Handlers
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
             if (command.CommandName != "quest") return;
-            var embed = new EmbedBuilder()
-                .WithAuthor(command.User)
-                .WithDescription($"⭐")
-                .WithColor(Color.DarkGrey)
-                .WithCurrentTimestamp()
-                .Build();
 
-            await command.FollowupAsync(embed: embed, ephemeral: true);
+            await command.FollowupAsync("1234567", ephemeral: true);
             return;
             try
             {
