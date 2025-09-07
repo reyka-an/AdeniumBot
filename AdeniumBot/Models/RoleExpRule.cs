@@ -18,5 +18,8 @@ namespace Adenium.Models
         
         [Column("exp_amount")]
         public int ExpAmount { get; set; }
+        [Column("role_name")]
+        [MaxLength(200)]
+        public string RoleName { get; set; } = string.Empty;
     }
 }
