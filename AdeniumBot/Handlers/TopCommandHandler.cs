@@ -3,6 +3,7 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Adenium.Data;
+using Adenium.Services;
 
 namespace Adenium.Handlers
 {
@@ -19,8 +20,14 @@ namespace Adenium.Handlers
                 return;
 
             await command.DeferAsync(ephemeral: false);
-
+            
             await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
+            
+            var helper = new HelperService(_client, db);
+            if (command.GuildId is ulong guildId)
+            {
+                await helper.RecalculateAllProfilesAsync(guildId);
+            }
 
             var top = await db.PlayerProfiles
                 .AsNoTracking()
