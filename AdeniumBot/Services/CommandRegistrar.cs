@@ -12,11 +12,10 @@ namespace Adenium.Services
         public async Task OnReadyAsync()
         {
             var guildIdStr = Environment.GetEnvironmentVariable("GUILD_ID");
-            
+
             if (!ulong.TryParse(guildIdStr, out var guildId))
             {
-                Console.WriteLine(
-                    "Задай переменную окружения GUILD_ID с ID сервера, чтобы быстро регистрировать команды.");
+                Console.WriteLine("Задай переменную окружения GUILD_ID с ID сервера, чтобы быстро регистрировать команды.");
                 return;
             }
 
@@ -26,8 +25,45 @@ namespace Adenium.Services
                 Console.WriteLine("Бот не видит указанный сервер. Убедись, что он добавлен на сервер.");
                 return;
             }
-
+            
+            var desired = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "start",
+                "profile",
+                "fav",
+                "block",
+                "rel",
+                "exp",
+                "top",
+                "quest",
+                "relations",
+            };
+            
             var cmds = await guild.GetApplicationCommandsAsync();
+            foreach (var existing in cmds)
+            {
+                if (!desired.Contains(existing.Name))
+                {
+                    await existing.DeleteAsync();
+                    Console.WriteLine($"Удалена устаревшая гильдейская команда /{existing.Name}");
+                }
+            }
+            
+            try
+            {
+                var global = await _client.GetGlobalApplicationCommandsAsync();
+                foreach (var gc in global)
+                {
+                    await gc.DeleteAsync();
+                    Console.WriteLine($"Удалена глобальная команда /{gc.Name}");
+                }
+            }
+            catch
+            {
+                // Если метод недоступен в используемой версии Discord.Net — тихо игнорируем.
+            }
+            
+            cmds = await guild.GetApplicationCommandsAsync();
 
             if (!cmds.Any(c => c.Name == "start"))
             {
@@ -154,6 +190,7 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(exp.Build());
                 Console.WriteLine("Зарегистрирована команда /exp (add, remove, set)");
             }
+
             if (!cmds.Any(c => c.Name == "top"))
             {
                 var top = new SlashCommandBuilder()
@@ -162,6 +199,7 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(top.Build());
                 Console.WriteLine("Зарегистрирована команда /top");
             }
+
             if (!cmds.Any(c => c.Name == "quest"))
             {
                 var quest = new SlashCommandBuilder()
@@ -185,6 +223,7 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(quest.Build());
                 Console.WriteLine("Зарегистрирована команда /quest (done)");
             }
+
             if (!cmds.Any(c => c.Name == "relations"))
             {
                 var relations = new SlashCommandBuilder()
@@ -194,7 +233,6 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(relations.Build());
                 Console.WriteLine("Зарегистрирована команда /relations");
             }
-
         }
     }
 }
