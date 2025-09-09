@@ -13,6 +13,48 @@ namespace Adenium.Handlers
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
+            if (command.CommandName == "relations")
+            {
+                await command.DeferAsync(ephemeral: true);
+
+                var ownerDiscordId = (long)command.User.Id;
+
+                await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
+
+                var owner = await EnsureProfileAsync(db, ownerDiscordId, command.User.Username);
+
+
+                var me = await db.PlayerProfiles
+                    .Include(p => p.Favorites).ThenInclude(l => l.Target)
+                    .Include(p => p.Blacklist).ThenInclude(l => l.Target)
+                    .FirstOrDefaultAsync(p => p.Id == owner.Id);
+
+                if (me is null)
+                {
+                    await command.FollowupAsync("Профиль не найден.", ephemeral: true);
+                    return;
+                }
+                
+                string FormatList<TLink>(IEnumerable<TLink> links, Func<TLink, PlayerProfile> pick)
+                {
+                    var items = links
+                        .Select(l => pick(l))
+                        .Select(t => $"<@{t.DiscordUserId}>")
+                        .ToList();
+
+                    return items.Count == 0 ? "— пусто —" : string.Join("\n", items);
+                }
+
+                var favText = FormatList(me.Favorites, l => l.Target);
+                var blText  = FormatList(me.Blacklist, l => l.Target);
+
+                var msg =
+                    $"**Избранные ({me.Favorites.Count}):**\n{favText}\n\n" +
+                    $"**Чёрный список ({me.Blacklist.Count}):**\n{blText}";
+
+                await command.FollowupAsync(msg, ephemeral: true);
+                return;
+            }
             if (command.CommandName == "rel")
             {
                 await command.DeferAsync(ephemeral: true);

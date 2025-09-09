@@ -185,6 +185,15 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(quest.Build());
                 Console.WriteLine("Зарегистрирована команда /quest (done)");
             }
+            if (!cmds.Any(c => c.Name == "relations"))
+            {
+                var relations = new SlashCommandBuilder()
+                    .WithName("relations")
+                    .WithDescription("Показать твои списки: избранные и чёрный список");
+
+                await guild.CreateApplicationCommandAsync(relations.Build());
+                Console.WriteLine("Зарегистрирована команда /relations");
+            }
 
         }
     }
