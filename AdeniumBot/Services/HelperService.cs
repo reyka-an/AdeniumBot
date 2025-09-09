@@ -15,7 +15,6 @@ namespace Adenium.Services
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _db     = db     ?? throw new ArgumentNullException(nameof(db));
         }
-        
         public async Task<int> RecalculateAllProfilesAsync(ulong guildId, CancellationToken ct = default)
         {
             var guild = _client.GetGuild(guildId);
