@@ -3,6 +3,7 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Adenium.Data;
+using Adenium.Services;
 
 namespace Adenium.Handlers
 {
@@ -19,9 +20,34 @@ namespace Adenium.Handlers
                 return;
 
             await command.DeferAsync(ephemeral: false);
+            
+            var guild = (command.Channel as SocketGuildChannel)?.Guild;
+            ulong? guildId = guild?.Id;
+            
+            IReadOnlyDictionary<long, IReadOnlyCollection<long>> userRolesMap =
+                new Dictionary<long, IReadOnlyCollection<long>>();
+
+            if (guild != null)
+            {
+                var map = new Dictionary<long, IReadOnlyCollection<long>>(capacity: guild.Users.Count);
+
+                foreach (var u in guild.Users)
+                {
+                    var discordUserId = unchecked((long)u.Id);
+                    var roleIds = u.Roles.Select(r => unchecked((long)r.Id)).ToArray();
+                    map[discordUserId] = roleIds;
+                }
+
+                userRolesMap = map;
+            }
 
             await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
-
+            
+            if (userRolesMap.Count > 0)
+            {
+                await HelperService.RecalculateAllAsync(db, unchecked((long)guildId!.Value), userRolesMap);
+            }
+            
             var top = await db.PlayerProfiles
                 .AsNoTracking()
                 .OrderByDescending(p => p.Exp)
