@@ -36,7 +36,7 @@ namespace Adenium
             _lifecycle  = new SessionLifecycle(_client, _sessions);
             _startHandler     = new StartCommandHandler(_client, _sessions, _lifecycle);
             _buttonHandler    = new ButtonHandler(_client, _sessions, _lifecycle);
-            _profileHandler   = new ProfileCommandHandler();
+            _profileHandler   = new ProfileCommandHandler(_client);
             _relationsHandler = new RelationsCommandHandler();
             _roleExpHandler   = new Adenium.Handlers.RoleExpHandler();
             _topHandler       = new Adenium.Handlers.TopCommandHandler(_client);
@@ -54,7 +54,6 @@ namespace Adenium
             _client.SlashCommandExecuted += _topHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += questHandler.OnSlashCommandAsync;
             
-            // -------------------------------------------------------------------
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token))

@@ -3,13 +3,19 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Adenium.Data;
 using Adenium.Models;
-using Adenium.Services; // <-- не забудь пространство имён для HelperService
+using Adenium.Services; // HelperService
 
 namespace Adenium.Handlers
 {
     public class ProfileCommandHandler
     {
+        private readonly DiscordSocketClient _client;
         private readonly BotDbContextFactory _dbFactory = new();
+
+        public ProfileCommandHandler(DiscordSocketClient client)
+        {
+            _client = client;
+        }
         
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
@@ -19,51 +25,43 @@ namespace Adenium.Handlers
 
             try
             {
-                var userId = unchecked((long)command.User.Id);
-                var username = command.User.Username;
+                var userId = command.User.Id;
 
                 await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
-                
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
                 if (!await db.Database.CanConnectAsync(cts.Token))
                 {
                     await command.FollowupAsync("У меня дела, мне некогда. Попробуй позже", ephemeral: true);
                     return;
                 }
-
+                
+                var guildId = command.GuildId ?? (command.Channel as SocketGuildChannel)?.Guild.Id;
+                if (guildId is null)
+                {
+                    await command.FollowupAsync("Эта команда доступна только на сервере.", ephemeral: true);
+                    return;
+                }
+                
+                var helper = new HelperService(_client, db);
+                await helper.RecalculateProfileAsync(guildId.Value, userId, cts.Token);
+                
                 var profile = await db.PlayerProfiles
-                    .FirstOrDefaultAsync(p => p.DiscordUserId == userId, cts.Token);
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.DiscordUserId == (long)userId, cts.Token);
 
                 if (profile is null)
                 {
-                    profile = new PlayerProfile
-                    {
-                        DiscordUserId = userId,
-                        Username = username,
-                        Exp = 0,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    db.PlayerProfiles.Add(profile);
-                    await db.SaveChangesAsync(cts.Token);
+                    await command.FollowupAsync("Не удалось получить профиль. Попробуй позже.", ephemeral: true);
+                    return;
                 }
-
-                if (profile.Username != username)
-                {
-                    profile.Username = username;
-                    await db.SaveChangesAsync(cts.Token);
-                }
-                
-                var guild = (command.Channel as SocketGuildChannel)?.Guild;
-                var gUser = command.User as SocketGuildUser;
 
                 var favCount = await db.FavoriteLinks.CountAsync(x => x.TargetId == profile.Id, cts.Token);
                 var blCount  = await db.BlacklistLinks.CountAsync(x => x.TargetId == profile.Id, cts.Token);
-                
-                var exp = profile.Exp;         
-                
+
                 var embed = new EmbedBuilder()
                     .WithAuthor(command.User)
-                    .WithDescription($"⭐ {exp}    ❤️  {favCount}    ❌  {blCount}")
+                    .WithDescription($"⭐ {profile.Exp}    ❤️  {favCount}    ❌  {blCount}")
                     .WithColor(Color.DarkGrey)
                     .WithCurrentTimestamp()
                     .Build();
