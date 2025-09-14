@@ -60,28 +60,27 @@ namespace Adenium.Handlers
                 foreach (var p in top)
                 {
                     var mention = $"<@{p.UserId}>";
-                    
+
                     string place = rank <= 3
                         ? $"{medals[rank - 1]}"
                         : $"**{rank,2}.**";
-                    
+
                     string expPretty = p.Exp.ToString("N0", CultureInfo.GetCultureInfo("ru-RU"));
-                    
+
+                    string line;
                     if (rank <= 3)
-                        sb.AppendLine($"{place} **{mention}** — `{expPretty} EXP`");
+                        line = $"{place} **{mention}** — `{expPretty} EXP`";
                     else
-                        sb.AppendLine($"{place} {mention} — `{expPretty} EXP`");
+                        line = $"{place} {mention} — `{expPretty} EXP`";
+                    
+                    sb.AppendLine(line);
+                    sb.AppendLine();
 
                     rank++;
                 }
 
                 eb.WithDescription(sb.ToString());
                 
-                eb.WithFooter(f =>
-                {
-                    f.Text = $"Запросил: {command.User.Username}";
-                    f.IconUrl = command.User.GetAvatarUrl() ?? command.User.GetDefaultAvatarUrl();
-                });
             }
 
             await command.FollowupAsync(embed: eb.Build(), ephemeral: false);
