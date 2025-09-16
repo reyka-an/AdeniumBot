@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Adenium.Data;
 using Adenium.Models;
+using System.Security.Cryptography;
 
 namespace Adenium.Handlers
 {
@@ -10,6 +11,69 @@ namespace Adenium.Handlers
     {
         private readonly BotDbContextFactory _dbFactory = new();
         private const int MaxPerList = 3;
+        
+        private static readonly string[] FavAddPhrases = new[]
+        {
+            "Готово, но думаешь это взаимно?",
+            "Готово. Пусть судьба сведёт вас… или алгоритм.",
+            "Добавила. Теперь система думает, что у тебя есть друзья.",
+            "Готово. Ты только что подписался на разочарование.",
+            "Добавила. Теперь у вас отношения уровня ‘неловкая симпатия’.",
+            "Отметила. Теперь в статистике ты выглядишь ещё отчаяннее.",
+            "Записала. Между вами уже что-то искрит.",
+            "Готово. Осталось пригласить его на свечи и вино.",
+            "Готово. Ты смелый — не каждый так открыто признаётся."
+        };
+
+        private static readonly string[] FavRemovePhrases = new[]
+        {
+            "Убрала из избранного. Новая любовь не за горами?",
+            "Готово. Сердце свободно, список — тоже.",
+            "Убрала. Он ещё долго будет вспоминать твой нежный клик.",
+            "Убрала. Так рождаются обиженные бывшие.",
+            "Готово. Твоя любовь была недолгой, но яркой… наверное.",
+            "Удалила. Расставания всегда тяжёлые.",
+            "Убрала. Надоело тащить за двоих?",
+            "Удалила. Видимо, тимплей оказался слишком травматичным.",
+            "Удалила. Напарник, наверное, сейчас где-то плачет… или радуется.",
+            "Готово. Теперь искать виноватого придётся в другом месте.",
+            "Готово. Теперь вы просто два незнакомца в одном лобби."
+        };
+
+        private static readonly string[] BlockAddPhrases = new[]
+        {
+            "Готово. Теперь ты его видишь, но никогда не тащишь.",
+            "Записала. Теперь ты будешь смотреть как страдают другие, доволен?",
+            "Добавила. Теперь он будет рядом, но на другом конце лобби.",
+            "Готово. Совместные катки отменяются, токсик-вайб остаётся.",
+            "Чёрный список пополнился новым талантом.",
+            "Готово. Ставлю галочку ‘никогда больше’.",
+            "Записано. Очередная легенда упала в пропасть.",
+            "Добавила. Поздравляю, теперь у вас отношения на уровне ‘заблокирован’."
+        };
+
+        private static readonly string[] BlockRemovePhrases = new[]
+        {
+            "Второй шанс выдан.",
+            "Готово. Мир-дружба-жвачка?",
+            "Получилось. Любовь победила ненависть.",
+            "Снял блок. Ты мазохист или просто соскучился?",
+            "Готово. Штош второй шанс — звучит как ошибка.",
+            "Всё, посмотрим, кто первым пожалеет.",
+            "Удалила. Решил дать второй шанс… зря.",
+            "Готово. Слабину дал, да?",
+            "Убрала. Держи своего любимого тролля обратно.",
+            "Готово. Ждём нового повода вернуть его обратно.",
+            "Готово. Система шокирована твоей наивностью.",
+            "Удалила. Теперь у тебя снова есть шанс пожалеть об этом.",
+
+        };
+
+        private static string GetRandomPhrase(string[] pool)
+        {
+            var idx = RandomNumberGenerator.GetInt32(pool.Length);
+            return pool[idx];
+        }
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
@@ -22,7 +86,6 @@ namespace Adenium.Handlers
                 await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
 
                 var owner = await EnsureProfileAsync(db, ownerDiscordId, command.User.Username);
-
 
                 var me = await db.PlayerProfiles
                     .Include(p => p.Favorites).ThenInclude(l => l.Target)
@@ -55,6 +118,7 @@ namespace Adenium.Handlers
                 await command.FollowupAsync(msg, ephemeral: true);
                 return;
             }
+
             if (command.CommandName == "rel")
             {
                 await command.DeferAsync(ephemeral: true);
@@ -107,7 +171,7 @@ namespace Adenium.Handlers
                     {
                         db.FavoriteLinks.Remove(link);
                         await db.SaveChangesAsync();
-                        await command.FollowupAsync($"Все? Нашел себе кого то получше?", ephemeral: true);
+                        await command.FollowupAsync(GetRandomPhrase(FavRemovePhrases), ephemeral: true);
                     }
                 }
                 else if (subName == "unblock")
@@ -127,8 +191,7 @@ namespace Adenium.Handlers
                     {
                         db.BlacklistLinks.Remove(link);
                         await db.SaveChangesAsync();
-                        await command.FollowupAsync($"Ох уже эти детские игры. Сегодня добавил... завтра убрал",
-                            ephemeral: true);
+                        await command.FollowupAsync(GetRandomPhrase(BlockRemovePhrases), ephemeral: true); 
                     }
                 }
                 else
@@ -188,9 +251,9 @@ namespace Adenium.Handlers
 
                     db.FavoriteLinks.Add(new FavoriteLink { OwnerId = owner.Id, TargetId = target.Id });
                     await db.SaveChangesAsync();
-                    await command.FollowupAsync("Думаешь это взаимно?", ephemeral: true);
+                    await command.FollowupAsync(GetRandomPhrase(FavAddPhrases), ephemeral: true);
                 }
-                else // /block
+                else 
                 {
                     var exists =
                         await db.BlacklistLinks.AnyAsync(x => x.OwnerId == owner.Id && x.TargetId == target.Id);
@@ -214,7 +277,7 @@ namespace Adenium.Handlers
 
                     db.BlacklistLinks.Add(new BlacklistLink { OwnerId = owner.Id, TargetId = target.Id });
                     await db.SaveChangesAsync();
-                    await command.FollowupAsync("Теперь он тебе не попадется", ephemeral: true);
+                    await command.FollowupAsync(GetRandomPhrase(BlockAddPhrases), ephemeral: true);
                 }
             }
         }
