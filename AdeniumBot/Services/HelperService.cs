@@ -1,3 +1,4 @@
+using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Adenium.Data;
@@ -9,12 +10,66 @@ namespace Adenium.Services
     {
         private readonly DiscordSocketClient _client;
         private readonly BotDbContext _db;
+        
+        private static readonly (int Exp, ulong RoleId)[] _rankRules =
+        {
+            (550, 1412853590988423178),
+            (350, 1413715537489297520),
+            (200, 1412567641943703804),
+            (100, 1403503913037991988),
+        };
 
         public HelperService(DiscordSocketClient client, BotDbContext db)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _db     = db     ?? throw new ArgumentNullException(nameof(db));
         }
+        
+        private SocketRole? GetTargetRankRole(SocketGuild guild, int exp)
+        {
+            foreach (var (needExp, roleId) in _rankRules.OrderByDescending(r => r.Exp))
+            {
+                if (exp >= needExp)
+                    return guild.GetRole(roleId);
+            }
+            return null;
+        }
+        
+        private async Task EnsureRankRolesAsync(SocketGuild guild, SocketGuildUser user, int exp, CancellationToken ct)
+        {
+            var targetRole = GetTargetRankRole(guild, exp);
+            var rankRoleIds = _rankRules.Select(r => r.RoleId).ToHashSet();
+
+            var currentRankRoles = user.Roles.Where(r => rankRoleIds.Contains(r.Id)).ToList();
+            
+            bool hasTarget = targetRole != null && currentRankRoles.Any(r => r.Id == targetRole.Id);
+            bool extraRolesExist = currentRankRoles.Any(r => targetRole == null || r.Id != targetRole.Id);
+
+            if (!hasTarget && targetRole != null)
+            {
+                if (guild.CurrentUser.GuildPermissions.ManageRoles &&
+                    guild.CurrentUser.Hierarchy > targetRole.Position)
+                {
+                    await user.AddRoleAsync(targetRole, new RequestOptions { CancelToken = ct });
+                }
+            }
+
+            if (extraRolesExist)
+            {
+
+                var toRemove = currentRankRoles.Where(r => targetRole == null || r.Id != targetRole.Id).ToArray();
+
+                toRemove = toRemove
+                    .Where(r => guild.CurrentUser.Hierarchy > r.Position)
+                    .ToArray();
+
+                if (toRemove.Length > 0 && guild.CurrentUser.GuildPermissions.ManageRoles)
+                {
+                    await user.RemoveRolesAsync(toRemove, new RequestOptions { CancelToken = ct });
+                }
+            }
+        }
+
         public async Task<int> RecalculateAllProfilesAsync(ulong guildId, CancellationToken ct = default)
         {
             var guild = _client.GetGuild(guildId);
@@ -74,6 +129,8 @@ namespace Adenium.Services
                     profile.Exp = newTotalExp;
                     changed++;
                 }
+                
+                await EnsureRankRolesAsync(guild, user, newTotalExp, ct);
             }
 
             await _db.SaveChangesAsync(ct);
@@ -130,6 +187,8 @@ namespace Adenium.Services
             }
 
             profile.Exp = rolesExp + questsExp;
+            
+            await EnsureRankRolesAsync(guild, user, profile.Exp, ct);
 
             await _db.SaveChangesAsync(ct);
         }
