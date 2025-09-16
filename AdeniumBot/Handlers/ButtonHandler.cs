@@ -2,7 +2,6 @@ using Discord;
 using Discord.WebSocket;
 using Adenium.Models;
 using Adenium.Services;
-using Adenium.Utils;
 using System.Security.Cryptography;
 
 namespace Adenium.Handlers
@@ -12,7 +11,8 @@ namespace Adenium.Handlers
         private readonly DiscordSocketClient _client;
         private readonly SessionStore _store;
         private readonly SessionLifecycle _lifecycle;
-        
+        private readonly PairingService _pairing;
+
         private static readonly string[] JoinPhrases = new[]
         {
             "Ты в игре!",
@@ -37,6 +37,7 @@ namespace Adenium.Handlers
             "Ты подписал контракт, теперь тебе до конца жизни нельзя банить Зайру.",
             "Вступил? Отлично, теперь у нас меньше шансов на победу."
         };
+
         private static readonly string[] AlreadyJoinedPhrases = new[]
         {
             "У тебя деменция? Ты уже нажимал эту кнопку",
@@ -54,11 +55,12 @@ namespace Adenium.Handlers
             "Ты уже в игре. Хочешь быть сразу за двух?"
         };
 
-        public ButtonHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle)
+        public ButtonHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle, PairingService pairing)
         {
             _client = client;
             _store = store;
             _lifecycle = lifecycle;
+            _pairing = pairing; // ✨
         }
 
         public async Task OnButtonAsync(SocketMessageComponent component)
@@ -76,11 +78,13 @@ namespace Adenium.Handlers
                     break;
             }
         }
+
         private static string GetRandomPhrase(string[] pool, int count)
         {
-            var index = RandomNumberGenerator.GetInt32(pool.Length); 
+            var index = RandomNumberGenerator.GetInt32(pool.Length);
             return string.Format(pool[index], count);
         }
+
         private async Task HandleJoin(string[] parts, SocketMessageComponent component)
         {
             if (parts.Length < 2) { await component.RespondAsync("Некорректная кнопка.", ephemeral: true); return; }
@@ -97,15 +101,10 @@ namespace Adenium.Handlers
             lock (s.SyncRoot)
                 added = s.Participants.Add(userId);
 
-            var nowCount = s.Participants.Count;
             if (added)
-            {
                 await component.RespondAsync(GetRandomPhrase(JoinPhrases, s.Participants.Count), ephemeral: true);
-            }
             else
-            {
                 await component.RespondAsync(GetRandomPhrase(AlreadyJoinedPhrases, s.Participants.Count), ephemeral: true);
-            }
 
             try { await UpdateLobbyMessageAsync(sid, s); }
             catch (Exception ex) { Console.WriteLine($"UpdateLobbyMessage error: {ex}"); }
@@ -133,16 +132,33 @@ namespace Adenium.Handlers
                 return;
             }
 
-            var current = s.Participants.ToList();
-            if (current.Count <= 2)
+            ulong[] participants;
+            lock (s.SyncRoot)
+                participants = s.Participants.ToArray();
+
+            if (participants.Length < 2)
             {
-                await component.RespondAsync("Некого распределять.", ephemeral: true);
+                await component.RespondAsync("Недостаточно участников для пар.", ephemeral: true);
                 return;
             }
 
-            var resultText = Pairing.BuildPairsText(current);
-            await component.Channel.SendMessageAsync($"**Результат распределения:**\n{resultText}");
+            await component.DeferAsync(); 
+            
+            var result = await _pairing.MakePairsAsync(participants);
+            
+            var lines = new List<string>();
+            foreach (var (a, b) in result.Pairs)
+                lines.Add($"• <@{a}> × <@{b}>");
 
+            if (result.Leftover is ulong left)
+                lines.Add($"\nОстался без пары: <@{left}>");
+
+            var resultText =
+                $"**Итоговые пары ({result.Pairs.Count}):**\n" +
+                string.Join("\n", lines);
+
+            await component.Channel.SendMessageAsync($"**Результат распределения:**\n{resultText}");
+            
             var disabled = new ComponentBuilder()
                 .WithButton(label: "Участвовать", customId: $"join:{sid}", style: ButtonStyle.Success, disabled: true)
                 .WithButton(label: "Старт", customId: $"begin:{sid}:{ownerId}", style: ButtonStyle.Primary, disabled: true)
@@ -150,13 +166,14 @@ namespace Adenium.Handlers
 
             await component.Message.ModifyAsync(m =>
             {
-                m.Content = $"{component.Message.Content}\n\n_Голосование завершено._";
+                m.Content = $"{component.Message.Content}\n\n_Голосование завершено. Пары сформированы._";
                 m.Components = disabled;
             });
 
             s.Cts.Cancel();
-            
             _store.RemoveSession(sid);
+
+            await component.FollowupAsync("Распределение завершено ✅", ephemeral: true);
         }
 
         private async Task UpdateLobbyMessageAsync(string sessionId, VoteSession s)
@@ -165,7 +182,8 @@ namespace Adenium.Handlers
             lock (s.SyncRoot) count = s.Participants.Count;
 
             var newText = "Нажмите на кнопку, чтобы принять участие в распределении на команды.\n" +
-                          $"Участников: **{count}**";
+                          $"Участников: **{count}**\n" +
+                          "_Пары учитывают чёрные списки (жёстко, даже односторонне) и небольшой шанс сыграть с избранным._";
 
             var components = new ComponentBuilder()
                 .WithButton(label: "Участвовать", customId: $"join:{sessionId}", style: ButtonStyle.Success)

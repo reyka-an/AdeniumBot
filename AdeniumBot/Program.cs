@@ -18,6 +18,7 @@ namespace Adenium
         private RelationsCommandHandler _relationsHandler = default!;
         private Adenium.Handlers.RoleExpHandler _roleExpHandler = default!;
         private Adenium.Handlers.TopCommandHandler _topHandler = default!;
+        private PairingService _pairing = default!;
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -30,12 +31,13 @@ namespace Adenium
 
             _client = new DiscordSocketClient(config);
             _client.Log += msg => { Console.WriteLine(msg.ToString()); return Task.CompletedTask; };
-
+            
+            _pairing        = new PairingService();  
             _sessions   = new SessionStore();
             _registrar  = new CommandRegistrar(_client);
             _lifecycle  = new SessionLifecycle(_client, _sessions);
             _startHandler     = new StartCommandHandler(_client, _sessions, _lifecycle);
-            _buttonHandler    = new ButtonHandler(_client, _sessions, _lifecycle);
+            _buttonHandler  = new ButtonHandler(_client, _sessions, _lifecycle, _pairing);
             _profileHandler   = new ProfileCommandHandler(_client);
             _relationsHandler = new RelationsCommandHandler();
             _roleExpHandler   = new Adenium.Handlers.RoleExpHandler();
