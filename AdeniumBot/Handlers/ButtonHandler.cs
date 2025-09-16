@@ -60,7 +60,7 @@ namespace Adenium.Handlers
             _client = client;
             _store = store;
             _lifecycle = lifecycle;
-            _pairing = pairing; // ✨
+            _pairing = pairing;
         }
 
         public async Task OnButtonAsync(SocketMessageComponent component)
@@ -151,7 +151,7 @@ namespace Adenium.Handlers
                 lines.Add($"• <@{a}> × <@{b}>");
 
             if (result.Leftover is ulong left)
-                lines.Add($"\nОстался без пары: <@{left}>");
+                lines.Add($"\nОдинокий волк: <@{left}>");
 
             var resultText =
                 $"**Итоговые пары ({result.Pairs.Count}):**\n" +
@@ -182,8 +182,7 @@ namespace Adenium.Handlers
             lock (s.SyncRoot) count = s.Participants.Count;
 
             var newText = "Нажмите на кнопку, чтобы принять участие в распределении на команды.\n" +
-                          $"Участников: **{count}**\n" +
-                          "_Пары учитывают чёрные списки (жёстко, даже односторонне) и небольшой шанс сыграть с избранным._";
+                          $"Участников: **{count}**\n";
 
             var components = new ComponentBuilder()
                 .WithButton(label: "Участвовать", customId: $"join:{sessionId}", style: ButtonStyle.Success)
