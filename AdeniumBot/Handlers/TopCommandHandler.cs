@@ -27,7 +27,7 @@ namespace Adenium.Handlers
             var helper = new HelperService(_client, db);
             if (command.GuildId is ulong guildId)
             {
-                await helper.RecalculateAllProfilesAsync(guildId);
+                //await helper.RecalculateAllProfilesAsync(guildId);
             }
 
             var top = await db.PlayerProfiles
