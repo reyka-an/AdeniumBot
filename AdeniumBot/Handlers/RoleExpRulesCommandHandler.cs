@@ -74,14 +74,14 @@ namespace Adenium.Handlers
             }
             await db.SaveChangesAsync();
             
+            await guild.DownloadUsersAsync();
+            
             var userIdsWithRole = guild.Users
                 .Where(u => u.Roles.Any(r => r.Id == role.Id))
-                .Select(u => (long)u.Id)
+                .Select(u => u.Id)
                 .ToArray();
-
-            var profiles = await db.PlayerProfiles
-                .Where(p => userIdsWithRole.Contains(p.DiscordUserId))
-                .ToListAsync();
+            
+            var profiles = await helper.GetOrCreateProfilesAsync(guild, userIdsWithRole);
             
             var changed = await helper.RecalculateAllProfilesWhereAsync(guild.Id, profiles);
 

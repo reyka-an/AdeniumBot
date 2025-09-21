@@ -123,5 +123,39 @@ namespace Adenium.Services
             await _db.SaveChangesAsync(ct);
             return changed;
         }
+        public async Task<List<PlayerProfile>> GetOrCreateProfilesAsync(
+            SocketGuild guild,
+            IEnumerable<ulong> userIds,
+            CancellationToken ct = default)
+        {
+            if (guild == null) throw new ArgumentNullException(nameof(guild));
+            if (userIds == null) throw new ArgumentNullException(nameof(userIds));
+
+            var ids = userIds.Select(u => (long)u).Distinct().ToArray();
+            
+            var profiles = await _db.PlayerProfiles
+                .Where(p => ids.Contains(p.DiscordUserId))
+                .ToListAsync(ct);
+
+            var have = profiles.Select(p => p.DiscordUserId).ToHashSet();
+            var missing = ids.Where(id => !have.Contains(id)).ToList();
+            
+            foreach (var id in missing)
+            {
+                var user = guild.GetUser((ulong)id);
+                profiles.Add(new PlayerProfile
+                {
+                    DiscordUserId = id,
+                    Username = user?.Username ?? string.Empty,
+                    Exp = 0
+                });
+                _db.PlayerProfiles.Add(profiles[^1]);
+            }
+
+            if (missing.Count > 0)
+                await _db.SaveChangesAsync(ct);
+
+            return profiles;
+        }
     }
 }
