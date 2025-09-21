@@ -83,7 +83,7 @@ namespace Adenium.Handlers
                 .Where(p => userIdsWithRole.Contains(p.DiscordUserId))
                 .ToListAsync();
             
-            var changed = await helper.RecalculateAllProfilesWhere(guild.Id, profiles);
+            var changed = await helper.RecalculateAllProfilesWhereAsync(guild.Id, profiles);
 
             await command.FollowupAsync(
                 $"Правило для роли <@&{role.Id}> установлено: **{amount}** EXP. " +

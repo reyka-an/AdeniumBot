@@ -20,6 +20,7 @@ namespace Adenium
         private Adenium.Handlers.TopCommandHandler _topHandler = default!;
         private PairingService _pairing = default!;
         private Adenium.Handlers.RoleExpRulesCommandHandler _roleExpRulesHandler = default!;
+        private Adenium.Handlers.RecalcAllCommandHandler _recalcAllHandler = default!;
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -44,6 +45,7 @@ namespace Adenium
             _roleExpHandler   = new Adenium.Handlers.RoleExpHandler();
             _topHandler       = new Adenium.Handlers.TopCommandHandler(_client);
             _roleExpRulesHandler = new Adenium.Handlers.RoleExpRulesCommandHandler(_client);
+            _recalcAllHandler = new Adenium.Handlers.RecalcAllCommandHandler(_client);
 
             var questHandler = new QuestCommandHandler();
 
@@ -56,6 +58,7 @@ namespace Adenium
             _client.SlashCommandExecuted += _topHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += questHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _roleExpRulesHandler.OnSlashCommandAsync;
+            _client.SlashCommandExecuted += _recalcAllHandler.OnSlashCommandAsync;
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token))

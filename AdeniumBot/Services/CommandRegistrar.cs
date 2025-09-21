@@ -197,6 +197,14 @@ namespace Adenium.Services
                 await guild.CreateApplicationCommandAsync(roleexp.Build());
                 Console.WriteLine("Зарегистрирована команда /roleexp (set)");
             }
+            if (!cmds.Any(c => c.Name == "recalc_all"))
+            {
+                var recalc = new SlashCommandBuilder()
+                    .WithName("recalc_all")
+                    .WithDescription("Пересчитать EXP у всех профилей и обновить ранговые роли");
+                await guild.CreateApplicationCommandAsync(recalc.Build());
+                Console.WriteLine("Зарегистрирована команда /recalc_all");
+            }
         }
     }
 }

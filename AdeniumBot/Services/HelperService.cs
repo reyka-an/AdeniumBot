@@ -36,7 +36,7 @@ namespace Adenium.Services
             return null;
         }
 
-        private async Task EnsureRankRolesAsync(SocketGuild guild, SocketGuildUser user, int exp, CancellationToken ct)
+        public async Task UpdateRankRoleAsync(SocketGuild guild, SocketGuildUser user, int exp, CancellationToken ct)
         {
             var targetRole = GetTargetRankRole(guild, exp);
             var rankRoleIds = _rankRules.Select(r => r.RoleId).ToHashSet();
@@ -70,7 +70,7 @@ namespace Adenium.Services
             }
         }
 
-        public async Task<int> RecalculateAllProfilesWhere(
+        public async Task<int> RecalculateAllProfilesWhereAsync(
             ulong guildId,
             IEnumerable<PlayerProfile> profiles,
             CancellationToken ct = default)
@@ -118,8 +118,6 @@ namespace Adenium.Services
                     profile.Exp = newTotalExp;
                     changed++;
                 }
-
-                await EnsureRankRolesAsync(guild, user, newTotalExp, ct);
             }
 
             await _db.SaveChangesAsync(ct);
