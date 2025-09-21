@@ -19,6 +19,7 @@ namespace Adenium
         private Adenium.Handlers.RoleExpHandler _roleExpHandler = default!;
         private Adenium.Handlers.TopCommandHandler _topHandler = default!;
         private PairingService _pairing = default!;
+        private Adenium.Handlers.RoleExpRulesCommandHandler _roleExpRulesHandler = default!;
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -42,20 +43,19 @@ namespace Adenium
             _relationsHandler = new RelationsCommandHandler();
             _roleExpHandler   = new Adenium.Handlers.RoleExpHandler();
             _topHandler       = new Adenium.Handlers.TopCommandHandler(_client);
+            _roleExpRulesHandler = new Adenium.Handlers.RoleExpRulesCommandHandler(_client);
 
             var questHandler = new QuestCommandHandler();
-            var expHandler = new ExpCommandHandler();
 
             _client.Ready                += _registrar.OnReadyAsync;
             _client.ButtonExecuted       += _buttonHandler.OnButtonAsync;
             _client.SlashCommandExecuted += _startHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _relationsHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _profileHandler.OnSlashCommandAsync;
-            _client.SlashCommandExecuted += expHandler.OnSlashCommandAsync;
             _client.GuildMemberUpdated   += _roleExpHandler.OnGuildMemberUpdated;
             _client.SlashCommandExecuted += _topHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += questHandler.OnSlashCommandAsync;
-            
+            _client.SlashCommandExecuted += _roleExpRulesHandler.OnSlashCommandAsync;
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token))

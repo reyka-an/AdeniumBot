@@ -24,12 +24,6 @@ namespace Adenium.Handlers
 
             await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
 
-            var helper = new HelperService(_client, db);
-            if (command.GuildId is ulong guildId)
-            {
-                //await helper.RecalculateAllProfilesAsync(guildId);
-            }
-
             var top = await db.PlayerProfiles
                 .AsNoTracking()
                 .OrderByDescending(p => p.Exp)

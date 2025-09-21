@@ -2,8 +2,6 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Adenium.Data;
-using Adenium.Models;
-using Adenium.Services; // HelperService
 
 namespace Adenium.Handlers
 {
@@ -42,9 +40,6 @@ namespace Adenium.Handlers
                     await command.FollowupAsync("Эта команда доступна только на сервере.", ephemeral: true);
                     return;
                 }
-                
-                var helper = new HelperService(_client, db);
-                await helper.RecalculateProfileAsync(guildId.Value, userId, cts.Token);
                 
                 var profile = await db.PlayerProfiles
                     .AsNoTracking()

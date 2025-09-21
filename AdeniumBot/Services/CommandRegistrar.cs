@@ -28,15 +28,8 @@ namespace Adenium.Services
             
             var desired = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "start",
-                "profile",
-                "fav",
-                "block",
-                "rel",
-                "exp",
-                "top",
-                "quest",
-                "relations",
+                "start","profile","fav","block","rel","top","quest","relations",
+                "roleexp"
             };
             
             var cmds = await guild.GetApplicationCommandsAsync();
@@ -139,58 +132,6 @@ namespace Adenium.Services
                 Console.WriteLine("Зарегистрирована команда /rel (unfav, unblock)");
             }
 
-            if (!cmds.Any(c => c.Name == "exp"))
-            {
-                var exp = new SlashCommandBuilder()
-                    .WithName("exp")
-                    .WithDescription("Управление монетами игроков (только для роли)")
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("add")
-                        .WithDescription("Начислить монеты игроку")
-                        .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("user")
-                            .WithDescription("Кому начислить")
-                            .WithType(ApplicationCommandOptionType.User)
-                            .WithRequired(true))
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("amount")
-                            .WithDescription("Сколько монет добавить")
-                            .WithType(ApplicationCommandOptionType.Integer)
-                            .WithRequired(true)))
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("remove")
-                        .WithDescription("Забрать монеты у игрока")
-                        .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("user")
-                            .WithDescription("У кого забрать")
-                            .WithType(ApplicationCommandOptionType.User)
-                            .WithRequired(true))
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("amount")
-                            .WithDescription("Сколько монет забрать")
-                            .WithType(ApplicationCommandOptionType.Integer)
-                            .WithRequired(true)))
-                    .AddOption(new SlashCommandOptionBuilder()
-                        .WithName("set")
-                        .WithDescription("Установить точный баланс игрока")
-                        .WithType(ApplicationCommandOptionType.SubCommand)
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("user")
-                            .WithDescription("Кому установить баланс")
-                            .WithType(ApplicationCommandOptionType.User)
-                            .WithRequired(true))
-                        .AddOption(new SlashCommandOptionBuilder()
-                            .WithName("value")
-                            .WithDescription("Новое значение баланса")
-                            .WithType(ApplicationCommandOptionType.Integer)
-                            .WithRequired(true)));
-
-                await guild.CreateApplicationCommandAsync(exp.Build());
-                Console.WriteLine("Зарегистрирована команда /exp (add, remove, set)");
-            }
-
             if (!cmds.Any(c => c.Name == "top"))
             {
                 var top = new SlashCommandBuilder()
@@ -232,6 +173,29 @@ namespace Adenium.Services
 
                 await guild.CreateApplicationCommandAsync(relations.Build());
                 Console.WriteLine("Зарегистрирована команда /relations");
+            }
+            if (!cmds.Any(c => c.Name == "roleexp"))
+            {
+                var roleexp = new SlashCommandBuilder()
+                    .WithName("roleexp")
+                    .WithDescription("Управление стоимостью EXP для ролей")
+                    .AddOption(new SlashCommandOptionBuilder()
+                        .WithName("set")
+                        .WithDescription("Задать стоимость EXP для роли")
+                        .WithType(ApplicationCommandOptionType.SubCommand)
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("role")
+                            .WithDescription("Роль")
+                            .WithType(ApplicationCommandOptionType.Role)
+                            .WithRequired(true))
+                        .AddOption(new SlashCommandOptionBuilder()
+                            .WithName("amount")
+                            .WithDescription("Стоимость EXP")
+                            .WithType(ApplicationCommandOptionType.Integer)
+                            .WithRequired(true)));
+
+                await guild.CreateApplicationCommandAsync(roleexp.Build());
+                Console.WriteLine("Зарегистрирована команда /roleexp (set)");
             }
         }
     }
