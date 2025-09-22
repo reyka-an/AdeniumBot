@@ -2,7 +2,7 @@ using System.IO;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 
-namespace Adenium.Data
+namespace AdeniumBot.Data
 {
     public class BotDbContextFactory : IDesignTimeDbContextFactory<BotDbContext>
     {

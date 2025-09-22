@@ -1,11 +1,11 @@
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Adenium.Data;
-using Adenium.Models;
-using Adenium.Services;
+using AdeniumBot.Data;
+using AdeniumBot.Models;
+using AdeniumBot.Services;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class RoleExpRulesCommandHandler
     {

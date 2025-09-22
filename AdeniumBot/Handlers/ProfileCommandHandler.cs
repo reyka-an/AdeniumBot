@@ -1,9 +1,9 @@
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Adenium.Data;
+using AdeniumBot.Data;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class ProfileCommandHandler
     {

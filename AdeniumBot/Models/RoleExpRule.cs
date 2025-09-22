@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Adenium.Models
+namespace AdeniumBot.Models
 {
     [Table("role_exp_rules")]
     public class RoleExpRule

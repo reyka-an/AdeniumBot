@@ -1,10 +1,10 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Adenium.Handlers;
-using Adenium.Services;
+using AdeniumBot.Handlers;
+using AdeniumBot.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace Adenium
+namespace AdeniumBot
 {
     class Program
     {
@@ -16,11 +16,11 @@ namespace Adenium
         private SessionLifecycle _lifecycle = default!;
         private ProfileCommandHandler _profileHandler = default!;
         private RelationsCommandHandler _relationsHandler = default!;
-        private Adenium.Handlers.RoleExpHandler _roleExpHandler = default!;
-        private Adenium.Handlers.TopCommandHandler _topHandler = default!;
+        private AdeniumBot.Handlers.RoleExpHandler _roleExpHandler = default!;
+        private AdeniumBot.Handlers.TopCommandHandler _topHandler = default!;
         private PairingService _pairing = default!;
-        private Adenium.Handlers.RoleExpRulesCommandHandler _roleExpRulesHandler = default!;
-        private Adenium.Handlers.RecalcAllCommandHandler _recalcAllHandler = default!;
+        private AdeniumBot.Handlers.RoleExpRulesCommandHandler _roleExpRulesHandler = default!;
+        private AdeniumBot.Handlers.RecalcAllCommandHandler _recalcAllHandler = default!;
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -42,10 +42,10 @@ namespace Adenium
             _buttonHandler  = new ButtonHandler(_client, _sessions, _lifecycle, _pairing);
             _profileHandler   = new ProfileCommandHandler(_client);
             _relationsHandler = new RelationsCommandHandler();
-            _roleExpHandler   = new Adenium.Handlers.RoleExpHandler();
-            _topHandler       = new Adenium.Handlers.TopCommandHandler(_client);
-            _roleExpRulesHandler = new Adenium.Handlers.RoleExpRulesCommandHandler(_client);
-            _recalcAllHandler = new Adenium.Handlers.RecalcAllCommandHandler(_client);
+            _roleExpHandler   = new AdeniumBot.Handlers.RoleExpHandler();
+            _topHandler       = new AdeniumBot.Handlers.TopCommandHandler(_client);
+            _roleExpRulesHandler = new AdeniumBot.Handlers.RoleExpRulesCommandHandler(_client);
+            _recalcAllHandler = new AdeniumBot.Handlers.RecalcAllCommandHandler(_client);
 
             var questHandler = new QuestCommandHandler();
 

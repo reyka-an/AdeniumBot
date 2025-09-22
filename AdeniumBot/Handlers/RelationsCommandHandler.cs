@@ -1,11 +1,11 @@
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Adenium.Data;
-using Adenium.Models;
+using AdeniumBot.Data;
+using AdeniumBot.Models;
 using System.Security.Cryptography;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class RelationsCommandHandler
     {

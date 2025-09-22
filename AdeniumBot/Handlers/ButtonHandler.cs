@@ -1,10 +1,10 @@
 using Discord;
 using Discord.WebSocket;
-using Adenium.Models;
-using Adenium.Services;
+using AdeniumBot.Models;
+using AdeniumBot.Services;
 using System.Security.Cryptography;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class ButtonHandler
     {

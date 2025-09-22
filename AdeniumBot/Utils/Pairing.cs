@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Adenium.Utils
+namespace AdeniumBot.Utils
 {
     public static class Pairing
     {

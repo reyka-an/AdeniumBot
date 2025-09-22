@@ -1,8 +1,8 @@
-using Adenium.Data;
-using Adenium.Models;
+using AdeniumBot.Data;
+using AdeniumBot.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Adenium.Services
+namespace AdeniumBot.Services
 {
     public class PairingService
     {

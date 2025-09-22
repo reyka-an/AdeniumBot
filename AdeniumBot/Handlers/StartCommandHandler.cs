@@ -1,8 +1,8 @@
 using Discord;
 using Discord.WebSocket;
-using Adenium.Services;
+using AdeniumBot.Services;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class StartCommandHandler
     {

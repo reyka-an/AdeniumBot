@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Adenium.Models;
+using AdeniumBot.Models;
 
-namespace Adenium.Data
+namespace AdeniumBot.Data
 {
     public class BotDbContext : DbContext
     {

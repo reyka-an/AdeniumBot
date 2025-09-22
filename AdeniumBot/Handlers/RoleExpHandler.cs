@@ -1,9 +1,9 @@
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Adenium.Models;
+using AdeniumBot.Models;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class RoleExpHandler
     {
@@ -18,7 +18,7 @@ namespace Adenium.Handlers
             if (!addedRoles.Any() && !removedRoles.Any())
                 return;
 
-            await using var db = new Adenium.Data.BotDbContextFactory().CreateDbContext(Array.Empty<string>());
+            await using var db = new AdeniumBot.Data.BotDbContextFactory().CreateDbContext(Array.Empty<string>());
 
             var guildId = unchecked((long)after.Guild.Id);
             var userId = unchecked((long)after.Id);

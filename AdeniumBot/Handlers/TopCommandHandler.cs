@@ -3,10 +3,10 @@ using System.Globalization;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Adenium.Data;
-using Adenium.Services;
+using AdeniumBot.Data;
+using AdeniumBot.Services;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public sealed class TopCommandHandler
     {

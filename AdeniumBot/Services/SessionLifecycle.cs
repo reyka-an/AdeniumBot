@@ -1,8 +1,8 @@
 using Discord;
 using Discord.WebSocket;
-using Adenium.Models;
+using AdeniumBot.Models;
 
-namespace Adenium.Services
+namespace AdeniumBot.Services
 {
     public class SessionLifecycle
     {

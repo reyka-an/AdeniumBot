@@ -1,10 +1,10 @@
 using Discord;
 using Discord.WebSocket;
-using Adenium.Data;
-using Adenium.Models;
+using AdeniumBot.Data;
+using AdeniumBot.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class QuestCommandHandler
     {

@@ -1,10 +1,10 @@
 using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Adenium.Data;
-using Adenium.Services;
+using AdeniumBot.Data;
+using AdeniumBot.Services;
 
-namespace Adenium.Handlers
+namespace AdeniumBot.Handlers
 {
     public class RecalcAllCommandHandler
     {
@@ -25,7 +25,7 @@ namespace Adenium.Handlers
             var guild = (command.Channel as SocketGuildChannel)?.Guild;
             if (guild == null)
             {
-                await command.FollowupAsync("Гильдия не найдена.", ephemeral: true);
+                await command.FollowupAsync("Сервер не найден", ephemeral: true);
                 return;
             }
 
@@ -41,12 +41,12 @@ namespace Adenium.Handlers
                 var user = guild.GetUser((ulong)profile.DiscordUserId);
                 if (user != null)
                 {
-                    await helper.UpdateRankRoleAsync(guild, user, profile.Exp, default);
+                    await helper.UpdateRankRoleAsync(guild);
                 }
             }
 
             await command.FollowupAsync(
-                $"✅ Роли обновлены.",
+                $"✅ Профили обновлены.",
                 ephemeral: true);
         }
     }

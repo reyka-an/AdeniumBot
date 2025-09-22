@@ -1,4 +1,4 @@
-namespace Adenium.Models
+namespace AdeniumBot.Models
 {
     public class PlayerQuest
     {
