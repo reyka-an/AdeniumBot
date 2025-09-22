@@ -1,0 +1,55 @@
+[33m5c023ff[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m test
+[33m5cc7166[m test
+[33m015668a[m add log
+[33m29f86e2[m update recalcallcommand
+[33m67e6e16[m fix
+[33ma13e051[m change namespace
+[33m3e2ee2f[m add try cath
+[33mfcab52c[m update role exp rules
+[33mb9f3534[m add new command recalc_all
+[33m8fd3a4c[m add command roleexp
+[33m13fabf0[m debug test
+[33me496d2e[m add new text
+[33m44e8949[m text update
+[33mb1df82a[m add blacklist logic
+[33mb69b923[m update helper
+[33m1cf0414[m update top
+[33m816250f[m update top command
+[33m9a45dbd[m new command registrar
+[33m58f9a6f[m add relations command
+[33m2ea9b6f[m test
+[33m0b0a8fc[m fix
+[33mb2b2a68[m update TopCommandHandler.cs
+[33mf127e57[m add expRecalculate
+[33mea29f3e[m fix QuestCommandHandler
+[33m31af0ba[m test quest command
+[33m426af44[m check error
+[33me2f3db7[m check
+[33m6c09f8c[m role update
+[33mffda95c[m fix quest
+[33m4ce7224[m fix quest
+[33md37db5b[m fix quest command handler
+[33m2cce5a1[m add quest for player
+[33mab0689c[m fix top players
+[33mbc2d078[m top for players
+[33m5ba2cca[m add role exp
+[33m66dfbec[m db init
+[33m1294a78[m create new Db
+[33m10eed43[m fix
+[33mcd3400e[m rename coin -> exp
+[33m5d94c0f[m[33m ([m[1;32mdev[m[33m)[m fix
+[33mdc2f458[m fix coin command
+[33md10b7c6[m add coin logic
+[33ma1d6df5[m unblock and unfav
+[33m092e40c[m add fav and block
+[33m431a14f[m profile logic
+[33m2f9c2d5[m fix
+[33md7b929a[m add new command "profile"
+[33mc0079ee[m add coin
+[33m31e78df[m fix db
+[33m172965c[m add db
+[33mb21a0d3[m update join text
+[33m2fb7f71[m update text
+[33mb6098f7[m change text
+[33m268edf4[m add session life
+[33mc1fd8ee[m init

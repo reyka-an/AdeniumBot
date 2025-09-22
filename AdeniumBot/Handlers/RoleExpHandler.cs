@@ -7,6 +7,9 @@ namespace AdeniumBot.Handlers
 {
     public class RoleExpHandler
     {
+        // ID канала для логов
+        private const ulong LogChannelId = 1419672109575311441;
+
         public async Task OnGuildMemberUpdated(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
         {
             var beforeRoles = before.HasValue ? before.Value.Roles.Select(r => r.Id).ToHashSet() : new HashSet<ulong>();
@@ -40,16 +43,16 @@ namespace AdeniumBot.Handlers
                 {
                     profile.Exp += rule.ExpAmount;
                     await db.SaveChangesAsync();
-
+                    
                     var notifyChannelId = Environment.GetEnvironmentVariable("EXP_NOTIFY_CHANNEL_ID");
-                    if (ulong.TryParse(notifyChannelId, out var channelId))
+                    if (!ulong.TryParse(notifyChannelId, out var channelId))
+                        channelId = LogChannelId;
+
+                    var ch = after.Guild.GetTextChannel(channelId);
+                    if (ch != null)
                     {
-                        var ch = after.Guild.GetTextChannel(channelId);
-                        if (ch != null)
-                        {
-                            await ch.SendMessageAsync(
-                                $"⭐ {after.Mention} получил **{rule.ExpAmount}** опыта за роль <@&{roleId}>.");
-                        }
+                        await ch.SendMessageAsync(
+                            $"⭐ {after.Mention} получил **{rule.ExpAmount}** опыта за роль <@&{roleId}>.");
                     }
                 }
             }
@@ -65,16 +68,16 @@ namespace AdeniumBot.Handlers
                     if (profile.Exp < 0) profile.Exp = 0;
 
                     await db.SaveChangesAsync();
-
+                    
                     var notifyChannelId = Environment.GetEnvironmentVariable("EXP_NOTIFY_CHANNEL_ID");
-                    if (ulong.TryParse(notifyChannelId, out var channelId))
+                    if (!ulong.TryParse(notifyChannelId, out var channelId))
+                        channelId = LogChannelId;
+
+                    var ch = after.Guild.GetTextChannel(channelId);
+                    if (ch != null)
                     {
-                        var ch = after.Guild.GetTextChannel(channelId);
-                        if (ch != null)
-                        {
-                            await ch.SendMessageAsync(
-                                $"➖ {after.Mention} потерял **{rule.ExpAmount}** опыта за снятие роли <@&{roleId}>.");
-                        }
+                        await ch.SendMessageAsync(
+                            $"➖ {after.Mention} потерял **{rule.ExpAmount}** опыта за снятие роли <@&{roleId}>.");
                     }
                 }
             }

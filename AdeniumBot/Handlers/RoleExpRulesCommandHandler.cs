@@ -42,7 +42,7 @@ namespace AdeniumBot.Handlers
                             ?? client.GetGuild(role.Guild.Id);
                 if (guild == null)
                 {
-                    await command.RespondAsync("Гильдия не найдена.", ephemeral: true);
+                    await command.RespondAsync("Сервер не найден.", ephemeral: true);
                     return;
                 }
 

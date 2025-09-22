@@ -10,6 +10,9 @@ namespace AdeniumBot.Handlers
     {
         private readonly BotDbContextFactory _dbFactory = new();
 
+        // ID канала для уведомлений
+        private const ulong NotifyChannelId = 1419672109575311441;
+
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
             if (command.CommandName != "quest") return;
@@ -23,7 +26,7 @@ namespace AdeniumBot.Handlers
                 }
 
                 await command.DeferAsync(ephemeral: true);
-                
+
                 var roleIdStr = Environment.GetEnvironmentVariable("QUEST_MARKER_ROLE_ID");
                 if (!ulong.TryParse(roleIdStr, out var requiredRoleId))
                 {
@@ -37,7 +40,7 @@ namespace AdeniumBot.Handlers
                     await command.FollowupAsync("У тебя нет прав использовать эту команду.", ephemeral: true);
                     return;
                 }
-                
+
                 var sub = command.Data.Options.FirstOrDefault();
                 if (sub is null || sub.Name != "done")
                 {
@@ -59,9 +62,22 @@ namespace AdeniumBot.Handlers
                     await command.FollowupAsync("Нужно указать и `number`, и `user`.", ephemeral: true);
                     return;
                 }
-                
-                var (ok, msg) = await MarkQuestDoneAsync(targetUser, number.Value);
+
+                var (ok, msg, expReward) = await MarkQuestDoneAsync(targetUser, number.Value);
+
+                // личный ответ пользователю
                 await command.FollowupAsync(msg, ephemeral: true);
+                
+                if (ok && expReward > 0)
+                {
+                    var guild = (command.Channel as SocketGuildChannel)?.Guild;
+                    var ch = guild?.GetTextChannel(NotifyChannelId);
+                    if (ch != null)
+                    {
+                        await ch.SendMessageAsync(
+                            $"🎯 {targetUser.Mention} выполнил квест **#{number.Value}**. Начислено **{expReward} EXP**.");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -70,20 +86,20 @@ namespace AdeniumBot.Handlers
                 {
                     await command.FollowupAsync("Произошла ошибка при обработке команды.", ephemeral: true);
                 }
-                catch { /* уже отвечали — игнор */ }
+                catch { }
             }
         }
 
         private static long ToLong(ulong x) => unchecked((long)x);
 
-        private async Task<(bool ok, string message)> MarkQuestDoneAsync(IUser targetUser, int questNumber)
+        private async Task<(bool ok, string message, int expReward)> MarkQuestDoneAsync(IUser targetUser, int questNumber)
         {
             await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
-            
+
             var quest = await db.Quests.FirstOrDefaultAsync(q => q.Number == questNumber && q.IsActive);
             if (quest == null)
-                return (false, $"Квест с номером **{questNumber}** не найден или отключён.");
-            
+                return (false, $"Квест с номером **{questNumber}** не найден или отключён.", 0);
+
             var targetDiscordId = ToLong(targetUser.Id);
             var player = await db.PlayerProfiles.FirstOrDefaultAsync(p => p.DiscordUserId == targetDiscordId);
             if (player is null)
@@ -106,7 +122,7 @@ namespace AdeniumBot.Handlers
                     await db.SaveChangesAsync();
                 }
             }
-            
+
             var pq = await db.PlayerQuests.FirstOrDefaultAsync(x => x.PlayerId == player.Id && x.QuestId == quest.Id);
             if (pq == null)
             {
@@ -118,14 +134,14 @@ namespace AdeniumBot.Handlers
                 };
                 db.PlayerQuests.Add(pq);
             }
-            
+
             if (quest.MaxCompletionsPerPlayer.HasValue && pq.CompletedCount >= quest.MaxCompletionsPerPlayer.Value)
             {
                 return (false,
                     $"Лимит выполнений для квеста **{quest.Number}** уже достигнут " +
-                    $"({pq.CompletedCount}/{quest.MaxCompletionsPerPlayer}).");
+                    $"({pq.CompletedCount}/{quest.MaxCompletionsPerPlayer}).", 0);
             }
-            
+
             pq.CompletedCount += 1;
             pq.LastCompletedAt = DateTime.UtcNow;
 
@@ -137,9 +153,11 @@ namespace AdeniumBot.Handlers
                 ? $"{pq.CompletedCount}/{quest.MaxCompletionsPerPlayer}"
                 : $"{pq.CompletedCount}";
 
-            return (true,
+            var message =
                 $"Отмечено выполнение квеста **{quest.Number}** у {targetUser.Mention}. " +
-                $"Прогресс: **{limitText}**. Начислено **{quest.ExpReward} EXP**.");
+                $"Прогресс: **{limitText}**. Начислено **{quest.ExpReward} EXP**.";
+
+            return (true, message, quest.ExpReward);
         }
     }
 }
