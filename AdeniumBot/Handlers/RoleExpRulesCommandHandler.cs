@@ -1,4 +1,3 @@
-using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using AdeniumBot.Data;
@@ -7,15 +6,9 @@ using AdeniumBot.Services;
 
 namespace AdeniumBot.Handlers
 {
-    public class RoleExpRulesCommandHandler
+    public class RoleExpRulesCommandHandler(DiscordSocketClient client)
     {
-        private readonly DiscordSocketClient _client;
         private const ulong AllowedRoleId = 1412519904229327062;
-
-        public RoleExpRulesCommandHandler(DiscordSocketClient client)
-        {
-            _client = client;
-        }
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
@@ -42,7 +35,7 @@ namespace AdeniumBot.Handlers
                 var amount = Convert.ToInt32(opts["amount"]);
 
                 var guild = (command.Channel as SocketGuildChannel)?.Guild
-                            ?? _client.GetGuild(role.Guild.Id);
+                            ?? client.GetGuild(role.Guild.Id);
                 if (guild == null)
                 {
                     await command.RespondAsync("Гильдия не найдена.", ephemeral: true);
@@ -52,7 +45,7 @@ namespace AdeniumBot.Handlers
                 await command.DeferAsync(ephemeral: true);
 
                 await using var db = new BotDbContextFactory().CreateDbContext(Array.Empty<string>());
-                var helper = new HelperService(_client, db);
+                var helper = new HelperService(client, db);
 
                 var guildId = unchecked((long)guild.Id);
                 var roleId = unchecked((long)role.Id);

@@ -5,16 +5,11 @@ using AdeniumBot.Data;
 
 namespace AdeniumBot.Handlers
 {
-    public class ProfileCommandHandler
+    public class ProfileCommandHandler(DiscordSocketClient client)
     {
-        private readonly DiscordSocketClient _client;
+        private readonly DiscordSocketClient _client = client;
         private readonly BotDbContextFactory _dbFactory = new();
 
-        public ProfileCommandHandler(DiscordSocketClient client)
-        {
-            _client = client;
-        }
-        
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
             if (command.CommandName != "profile") return;

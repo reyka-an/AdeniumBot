@@ -4,16 +4,12 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using AdeniumBot.Data;
-using AdeniumBot.Services;
 
 namespace AdeniumBot.Handlers
 {
-    public sealed class TopCommandHandler
+    public sealed class TopCommandHandler(DiscordSocketClient client)
     {
-        private readonly DiscordSocketClient _client;
         private readonly BotDbContextFactory _dbFactory = new();
-
-        public TopCommandHandler(DiscordSocketClient client) => _client = client;
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
@@ -38,7 +34,7 @@ namespace AdeniumBot.Handlers
                 .WithAuthor(a =>
                 {
                     a.Name = "🏆 Топ-10 игроков";
-                    a.IconUrl = _client.CurrentUser.GetAvatarUrl() ?? _client.CurrentUser.GetDefaultAvatarUrl();
+                    a.IconUrl = client.CurrentUser.GetAvatarUrl() ?? client.CurrentUser.GetDefaultAvatarUrl();
                 });
 
             if (top.Count == 0)

@@ -100,16 +100,13 @@ namespace AdeniumBot.Services
         }
 
 
-        public async Task<int> RecalculateAllProfilesWhereAsync(
-            ulong guildId,
-            IEnumerable<PlayerProfile> profiles,
+        public async Task<int> RecalculateAllProfilesWhereAsync(ulong guildId, IEnumerable<PlayerProfile> profiles,
             CancellationToken ct = default)
-
         {
             if (profiles == null) throw new ArgumentNullException(nameof(profiles));
 
             var guild = _client.GetGuild(guildId);
-            if (guild == null) throw new InvalidOperationException($"Guild {guildId} not found/accessible.");
+            if (guild == null) throw new InvalidOperationException($"Сервер не найден");
 
             var expByRoleId = await _db.RoleExpRules
                 .Where(r => r.GuildId == (long)guildId)
@@ -154,9 +151,7 @@ namespace AdeniumBot.Services
             return changed;
         }
 
-        public async Task<List<PlayerProfile>> GetOrCreateProfilesAsync(
-            SocketGuild guild,
-            IEnumerable<ulong> userIds,
+        public async Task<List<PlayerProfile>> GetOrCreateProfilesAsync(SocketGuild guild, IEnumerable<ulong> userIds,
             CancellationToken ct = default)
         {
             if (guild == null) throw new ArgumentNullException(nameof(guild));
