@@ -24,7 +24,7 @@ namespace AdeniumBot.Services
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _db = db ?? throw new ArgumentNullException(nameof(db));
         }
-        
+
         /// <summary>
         /// Возвращает ранговую роль в зависимости от переданного опыта
         /// </summary>
@@ -51,9 +51,7 @@ namespace AdeniumBot.Services
 
             // Забираем EXP из БД только для пользователей гильдии
             var guildUserIds = guild.Users.Select(u => (long)u.Id).ToArray();
-            
-            //TODO Добавить метод создания профилей пользователей для всех участников сервера которых нет в БД
-            
+
             var profiles = await _db.PlayerProfiles
                 .Where(p => guildUserIds.Contains(p.DiscordUserId))
                 .Select(p => new { p.DiscordUserId, p.Exp })
@@ -99,30 +97,38 @@ namespace AdeniumBot.Services
             }
         }
 
-
-        public async Task<int> RecalculateAllProfilesWhereAsync(ulong guildId, IEnumerable<PlayerProfile> profiles,
-            CancellationToken ct = default)
+        /// <summary>
+        /// Пересчитывает опыт у всех пользователей, с учетом опыта за квесты и роли
+        /// </summary>
+        public async Task<int> RecalculateAllProfilesAsync(SocketGuild guild, CancellationToken ct = default)
         {
-            if (profiles == null) throw new ArgumentNullException(nameof(profiles));
+            if (guild == null) throw new ArgumentNullException(nameof(guild));
 
-            var guild = _client.GetGuild(guildId);
-            if (guild == null) throw new InvalidOperationException($"Сервер не найден");
-
+            var guildIdLong = unchecked((long)guild.Id);
+            
             var expByRoleId = await _db.RoleExpRules
-                .Where(r => r.GuildId == (long)guildId)
+                .Where(r => r.GuildId == guildIdLong)
                 .ToDictionaryAsync(r => (ulong)r.RoleId, r => r.ExpAmount, ct);
+            
+            var guildUserIds = guild.Users
+                .Select(u => (long)u.Id)
+                .Distinct()
+                .ToArray();
 
-            var profileIds = profiles.Select(p => p.Id).ToArray();
+            if (guildUserIds.Length == 0)
+                return 0;
 
-            var profilesToUpdate = await _db.PlayerProfiles
+            // Подтягиваем существующие профили и квесты только для пользователей этой гильдии
+            var profiles = await _db.PlayerProfiles
                 .Include(p => p.Quests)
                 .ThenInclude(pq => pq.Quest)
-                .Where(p => profileIds.Contains(p.Id))
+                .Where(p => guildUserIds.Contains(p.DiscordUserId))
                 .ToListAsync(ct);
 
+            // Пересчёт EXP для всех профилей роли + квесты
             int changed = 0;
 
-            foreach (var profile in profilesToUpdate)
+            foreach (var profile in profiles)
             {
                 var user = guild.GetUser((ulong)profile.DiscordUserId);
                 if (user == null)
@@ -139,49 +145,74 @@ namespace AdeniumBot.Services
                 if (profile.Quests is { Count: > 0 })
                     questsExp = profile.Quests.Sum(pq => (pq.Quest?.ExpReward ?? 0) * pq.CompletedCount);
 
-                var newTotalExp = rolesExp + questsExp;
-                if (profile.Exp != newTotalExp)
+                var newTotal = rolesExp + questsExp;
+                if (profile.Exp != newTotal)
                 {
-                    profile.Exp = newTotalExp;
+                    profile.Exp = newTotal;
                     changed++;
                 }
             }
-
             await _db.SaveChangesAsync(ct);
             return changed;
         }
 
-        public async Task<List<PlayerProfile>> GetOrCreateProfilesAsync(SocketGuild guild, IEnumerable<ulong> userIds,
+        /// <summary>
+        /// Возвращает профили всех пользователей сервера, и создает их, если их нет в БД
+        /// </summary>
+        public async Task<List<PlayerProfile>> GetOrCreateProfilesAsync(SocketGuild guild,
             CancellationToken ct = default)
         {
             if (guild == null) throw new ArgumentNullException(nameof(guild));
-            if (userIds == null) throw new ArgumentNullException(nameof(userIds));
 
-            var ids = userIds.Select(u => (long)u).Distinct().ToArray();
+            var guildUserIds = guild.Users
+                .Select(u => (long)u.Id)
+                .Distinct()
+                .ToArray();
 
-            var profiles = await _db.PlayerProfiles
-                .Where(p => ids.Contains(p.DiscordUserId))
+            if (guildUserIds.Length == 0)
+                return new List<PlayerProfile>();
+
+            var existing = await _db.PlayerProfiles
+                .Where(p => guildUserIds.Contains(p.DiscordUserId))
                 .ToListAsync(ct);
 
-            var have = profiles.Select(p => p.DiscordUserId).ToHashSet();
-            var missing = ids.Where(id => !have.Contains(id)).ToList();
+            var existingById = existing.ToDictionary(p => p.DiscordUserId, p => p);
 
-            foreach (var id in missing)
+            // Создаём недостающие профили
+            var toCreate = new List<PlayerProfile>(capacity: Math.Max(0, guildUserIds.Length - existing.Count));
+
+            foreach (var user in guild.Users)
             {
-                var user = guild.GetUser((ulong)id);
-                profiles.Add(new PlayerProfile
+                var id = (long)user.Id;
+
+                if (!existingById.TryGetValue(id, out var profile))
                 {
-                    DiscordUserId = id,
-                    Username = user?.Username ?? string.Empty,
-                    Exp = 0
-                });
-                _db.PlayerProfiles.Add(profiles[^1]);
+                    profile = new PlayerProfile
+                    {
+                        DiscordUserId = id,
+                        Username = user.Username,
+                        Exp = 0
+                    };
+                    toCreate.Add(profile);
+                    existingById[id] = profile;
+                }
+                else
+                {
+                    // Для существующих пользователей синхронизируем Username
+                    if (!string.Equals(profile.Username, user.Username, StringComparison.Ordinal))
+                        profile.Username = user.Username;
+                }
             }
 
-            if (missing.Count > 0)
+            if (toCreate.Count > 0)
+                await _db.PlayerProfiles.AddRangeAsync(toCreate, ct);
+
+            if (toCreate.Count > 0 || existing.Any(p =>
+                    p.Username != (guild.GetUser((ulong)p.DiscordUserId)?.Username ?? p.Username)))
                 await _db.SaveChangesAsync(ct);
 
-            return profiles;
+            // Возвращаем профили для всех пользователей сервера
+            return existingById.Values.ToList();
         }
     }
 }

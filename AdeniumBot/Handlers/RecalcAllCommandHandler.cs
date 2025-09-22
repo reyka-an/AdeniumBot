@@ -1,5 +1,4 @@
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using AdeniumBot.Data;
 using AdeniumBot.Services;
 
@@ -23,19 +22,10 @@ namespace AdeniumBot.Handlers
 
             await using var db = new BotDbContextFactory().CreateDbContext(Array.Empty<string>());
             var helper = new HelperService(client, db);
-            
-            var profiles = await db.PlayerProfiles.ToListAsync();
-            
-            var changed = await helper.RecalculateAllProfilesWhereAsync(guild.Id, profiles);
-            
-            foreach (var profile in profiles)
-            {
-                var user = guild.GetUser((ulong)profile.DiscordUserId);
-                if (user != null)
-                {
-                    await helper.UpdateRankRoleAsync(guild);
-                }
-            }
+
+            await helper.GetOrCreateProfilesAsync(guild);
+            await helper.RecalculateAllProfilesAsync(guild);
+            await helper.UpdateRankRoleAsync(guild);
 
             await command.FollowupAsync(
                 $"✅ Профили обновлены.",

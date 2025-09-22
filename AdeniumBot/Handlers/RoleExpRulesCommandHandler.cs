@@ -6,8 +6,12 @@ using AdeniumBot.Services;
 
 namespace AdeniumBot.Handlers
 {
+    /// <summary>
+    /// Обновляет количество опыт за роль, после чего пересчитывает опыт у всех пользователей
+    /// </summary>
     public class RoleExpRulesCommandHandler(DiscordSocketClient client)
     {
+        // Модератор
         private const ulong AllowedRoleId = 1412519904229327062;
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
@@ -70,16 +74,7 @@ namespace AdeniumBot.Handlers
 
                 await db.SaveChangesAsync();
 
-                await guild.DownloadUsersAsync();
-
-                var userIdsWithRole = guild.Users
-                    .Where(u => u.Roles.Any(r => r.Id == role.Id))
-                    .Select(u => u.Id)
-                    .ToArray();
-
-                var profiles = await helper.GetOrCreateProfilesAsync(guild, userIdsWithRole);
-
-                var changed = await helper.RecalculateAllProfilesWhereAsync(guild.Id, profiles);
+                var changed = await helper.RecalculateAllProfilesAsync(guild);
 
                 await command.FollowupAsync(
                     $"Правило для роли <@&{role.Id}> установлено: **{amount}** EXP. " +
