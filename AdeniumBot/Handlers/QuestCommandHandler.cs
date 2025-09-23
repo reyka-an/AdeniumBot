@@ -3,15 +3,22 @@ using Discord.WebSocket;
 using AdeniumBot.Data;
 using AdeniumBot.Models;
 using Microsoft.EntityFrameworkCore;
+using AdeniumBot.Services; 
 
 namespace AdeniumBot.Handlers
 {
     public class QuestCommandHandler
     {
         private readonly BotDbContextFactory _dbFactory = new();
+        private readonly DiscordSocketClient _client;
 
         // ID канала для уведомлений
         private const ulong NotifyChannelId = 1419672109575311441;
+
+        public QuestCommandHandler(DiscordSocketClient client)
+        {
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+        }
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
@@ -25,8 +32,16 @@ namespace AdeniumBot.Handlers
                     return;
                 }
 
+                var guild = (command.Channel as SocketGuildChannel)?.Guild;
+                if (guild == null)
+                {
+                    await command.RespondAsync("Гильдия не найдена.", ephemeral: true);
+                    return;
+                }
+
                 await command.DeferAsync(ephemeral: true);
 
+                // Разрешённая роль
                 var roleIdStr = Environment.GetEnvironmentVariable("QUEST_MARKER_ROLE_ID");
                 if (!ulong.TryParse(roleIdStr, out var requiredRoleId))
                 {
@@ -63,21 +78,42 @@ namespace AdeniumBot.Handlers
                     return;
                 }
 
-                var (ok, msg, expReward) = await MarkQuestDoneAsync(targetUser, number.Value);
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+                var ct = cts.Token;
 
-                // личный ответ пользователю
-                await command.FollowupAsync(msg, ephemeral: true);
+                await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
                 
+                var helper = new HelperService(_client, db);
+                var profiles = await helper.GetOrCreateProfilesAsync(guild, ct);
+
+                var targetIdLong = unchecked((long)targetUser.Id);
+                var player = profiles.FirstOrDefault(p => p.DiscordUserId == targetIdLong);
+                if (player == null)
+                {
+                    await command.FollowupAsync("Не удалось найти или создать профиль игрока.", ephemeral: true);
+                    return;
+                }
+                
+                var (ok, msg, expReward) = await MarkQuestDoneAsync(db, player, targetUser, number.Value, ct);
+
+                // личный ответ инициатору
+                await command.FollowupAsync(msg, ephemeral: true);
+
+                // публичное уведомление
                 if (ok && expReward > 0)
                 {
-                    var guild = (command.Channel as SocketGuildChannel)?.Guild;
-                    var ch = guild?.GetTextChannel(NotifyChannelId);
+                    var ch = guild.GetTextChannel(NotifyChannelId);
                     if (ch != null)
                     {
                         await ch.SendMessageAsync(
-                            $"🎯 {targetUser.Mention} выполнил квест **#{number.Value}**. Начислено **{expReward} EXP**.");
+                            $"🎯 {targetUser.Mention} выполнил квест **#{number.Value}**. " +
+                            $"Начислено **{expReward} EXP**. (отметил {guildUser.Mention})");
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                try { await command.FollowupAsync("⏱️ Операция отменена по таймауту.", ephemeral: true); } catch { }
             }
             catch (Exception ex)
             {
@@ -90,40 +126,26 @@ namespace AdeniumBot.Handlers
             }
         }
 
-        private static long ToLong(ulong x) => unchecked((long)x);
-
-        private async Task<(bool ok, string message, int expReward)> MarkQuestDoneAsync(IUser targetUser, int questNumber)
+        /// <summary>
+        /// Отмечает выполнение квеста для уже существующего профиля игрока.
+        /// Возвращает: успех, сообщение и начисленный опыт
+        /// </summary>
+        private static async Task<(bool ok, string message, int expReward)> MarkQuestDoneAsync(
+            BotDbContext db,
+            PlayerProfile player,
+            IUser targetUser,
+            int questNumber,
+            CancellationToken ct = default)
         {
-            await using var db = _dbFactory.CreateDbContext(Array.Empty<string>());
+            var quest = await db.Quests
+                .FirstOrDefaultAsync(q => q.Number == questNumber && q.IsActive, ct);
 
-            var quest = await db.Quests.FirstOrDefaultAsync(q => q.Number == questNumber && q.IsActive);
             if (quest == null)
                 return (false, $"Квест с номером **{questNumber}** не найден или отключён.", 0);
 
-            var targetDiscordId = ToLong(targetUser.Id);
-            var player = await db.PlayerProfiles.FirstOrDefaultAsync(p => p.DiscordUserId == targetDiscordId);
-            if (player is null)
-            {
-                player = new PlayerProfile
-                {
-                    DiscordUserId = targetDiscordId,
-                    Username = targetUser.Username,
-                    Exp = 0,
-                    CreatedAt = DateTime.UtcNow
-                };
-                db.PlayerProfiles.Add(player);
-                await db.SaveChangesAsync();
-            }
-            else
-            {
-                if (!string.Equals(player.Username, targetUser.Username, StringComparison.Ordinal))
-                {
-                    player.Username = targetUser.Username;
-                    await db.SaveChangesAsync();
-                }
-            }
+            var pq = await db.PlayerQuests
+                .FirstOrDefaultAsync(x => x.PlayerId == player.Id && x.QuestId == quest.Id, ct);
 
-            var pq = await db.PlayerQuests.FirstOrDefaultAsync(x => x.PlayerId == player.Id && x.QuestId == quest.Id);
             if (pq == null)
             {
                 pq = new PlayerQuest
@@ -147,7 +169,7 @@ namespace AdeniumBot.Handlers
 
             player.Exp += quest.ExpReward;
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(ct);
 
             var limitText = quest.MaxCompletionsPerPlayer.HasValue
                 ? $"{pq.CompletedCount}/{quest.MaxCompletionsPerPlayer}"

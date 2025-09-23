@@ -47,7 +47,7 @@ namespace AdeniumBot
             _roleExpRulesHandler = new AdeniumBot.Handlers.RoleExpRulesCommandHandler(_client);
             _recalcAllHandler = new AdeniumBot.Handlers.RecalcAllCommandHandler(_client);
 
-            var questHandler = new QuestCommandHandler();
+            var questHandler = new QuestCommandHandler(_client);
 
             _client.Ready                += _registrar.OnReadyAsync;
             _client.ButtonExecuted       += _buttonHandler.OnButtonAsync;
