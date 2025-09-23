@@ -4,18 +4,9 @@ using AdeniumBot.Services;
 
 namespace AdeniumBot.Handlers
 {
-    public class StartCommandHandler
+    public class StartCommandHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle)
     {
-        private readonly DiscordSocketClient _client;
-        private readonly SessionStore _store;
-        private readonly SessionLifecycle _lifecycle;
-
-        public StartCommandHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle)
-        {
-            _client = client;
-            _store = store;
-            _lifecycle = lifecycle;
-        }
+        private readonly DiscordSocketClient _client = client;
 
         public async Task OnSlashCommandAsync(SocketSlashCommand command)
         {
@@ -23,14 +14,14 @@ namespace AdeniumBot.Handlers
 
             var channelId = (command.Channel as ISocketMessageChannel)!.Id;
 
-            if (_store.TryGetSessionByChannel(channelId, out _))
+            if (store.TryGetSessionByChannel(channelId, out _))
             {
                 await command.RespondAsync("В этом канале уже идёт набор.", ephemeral: true);
                 return;
             }
 
             var ownerId = command.User.Id;
-            var sessionId = _store.CreateSession(channelId, ownerId, out var session);
+            var sessionId = store.CreateSession(channelId, ownerId, out var session);
 
             lock (session.SyncRoot)
                 session.Participants.Add(ownerId);
@@ -46,11 +37,9 @@ namespace AdeniumBot.Handlers
             );
 
             var orig = await command.GetOriginalResponseAsync();
-            _store.TryBindMessage(sessionId, channelId, orig.Id);
+            store.TryBindMessage(sessionId, channelId, orig.Id);
             
-            _lifecycle.StartAutoTimeout(sessionId, session, TimeSpan.FromMinutes(20));
-
-            await command.FollowupAsync("Голосование запущено", ephemeral: true);
+            lifecycle.StartAutoTimeout(sessionId, session, TimeSpan.FromMinutes(20));
         }
     }
     

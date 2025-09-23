@@ -6,12 +6,13 @@ using System.Security.Cryptography;
 
 namespace AdeniumBot.Handlers
 {
-    public class ButtonHandler
+    public class ButtonHandler(
+        DiscordSocketClient client,
+        SessionStore store,
+        SessionLifecycle lifecycle,
+        PairingService pairing)
     {
-        private readonly DiscordSocketClient _client;
-        private readonly SessionStore _store;
-        private readonly SessionLifecycle _lifecycle;
-        private readonly PairingService _pairing;
+        private readonly SessionLifecycle _lifecycle = lifecycle;
 
         private static readonly string[] JoinPhrases = new[]
         {
@@ -55,14 +56,6 @@ namespace AdeniumBot.Handlers
             "Ты уже в игре. Хочешь быть сразу за двух?"
         };
 
-        public ButtonHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle, PairingService pairing)
-        {
-            _client = client;
-            _store = store;
-            _lifecycle = lifecycle;
-            _pairing = pairing;
-        }
-
         public async Task OnButtonAsync(SocketMessageComponent component)
         {
             var parts = component.Data.CustomId.Split(':');
@@ -90,7 +83,7 @@ namespace AdeniumBot.Handlers
             if (parts.Length < 2) { await component.RespondAsync("Некорректная кнопка.", ephemeral: true); return; }
             var sid = parts[1];
 
-            if (!_store.TryGetSession(sid, out var s))
+            if (!store.TryGetSession(sid, out var s))
             {
                 await component.RespondAsync("Что то тут не так... знать бы что", ephemeral: true);
                 return;
@@ -120,7 +113,7 @@ namespace AdeniumBot.Handlers
                 return;
             }
 
-            if (!_store.TryGetSession(sid, out var s))
+            if (!store.TryGetSession(sid, out var s))
             {
                 await component.RespondAsync("Тут уже как бы все, поезд ушел", ephemeral: true);
                 return;
@@ -144,7 +137,7 @@ namespace AdeniumBot.Handlers
 
             await component.DeferAsync(); 
             
-            var result = await _pairing.MakePairsAsync(participants);
+            var result = await pairing.MakePairsAsync(participants);
             
             var lines = new List<string>();
             foreach (var (a, b) in result.Pairs)
@@ -154,7 +147,7 @@ namespace AdeniumBot.Handlers
                 lines.Add($"\nОдинокий волк: <@{left}>");
 
             var resultText =
-                $"**Итоговые пары ({result.Pairs.Count}):**\n" +
+                $"**Итоговые пары:**\n" +
                 string.Join("\n", lines);
 
             await component.Channel.SendMessageAsync($"**Результат распределения:**\n{resultText}");
@@ -171,9 +164,7 @@ namespace AdeniumBot.Handlers
             });
 
             s.Cts.Cancel();
-            _store.RemoveSession(sid);
-
-            await component.FollowupAsync("Распределение завершено ✅", ephemeral: true);
+            store.RemoveSession(sid);
         }
 
         private async Task UpdateLobbyMessageAsync(string sessionId, VoteSession s)
@@ -189,7 +180,7 @@ namespace AdeniumBot.Handlers
                 .WithButton(label: "Старт", customId: $"begin:{sessionId}:{s.OwnerId}", style: ButtonStyle.Primary)
                 .Build();
 
-            var ch = _client.GetChannel(s.ChannelId) as IMessageChannel;
+            var ch = client.GetChannel(s.ChannelId) as IMessageChannel;
             if (ch == null) return;
 
             var msg = await ch.GetMessageAsync(s.MessageId);
