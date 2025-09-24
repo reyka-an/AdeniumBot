@@ -20,15 +20,21 @@ namespace AdeniumBot.Handlers
                 return;
             }
 
+
             await using var db = new BotDbContextFactory().CreateDbContext(Array.Empty<string>());
             var helper = new HelperService(client, db);
-
+            int userCount = guild.Users.Count;
+            int dbCount = db.PlayerProfiles.Count();        
+            
             await helper.GetOrCreateProfilesAsync(guild);
-            await helper.RecalculateAllProfilesAsync(guild);
+            int changed = await helper.RecalculateAllProfilesAsync(guild);
             await helper.UpdateRankRoleAsync(guild);
-
+            
             await command.FollowupAsync(
-                $"✅ Профили обновлены.",
+                $"✅ Роли обновлены.\n" +
+                $"👥 Пользователей на сервере: **{userCount}**\n" +
+                $"📊 Профилей в БД: **{dbCount}**\n" +
+                $"🔄 Пересчитано профилей: **{changed}**",
                 ephemeral: true);
         }
     }
