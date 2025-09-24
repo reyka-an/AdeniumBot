@@ -28,7 +28,7 @@ namespace AdeniumBot
         {
             var config = new DiscordSocketConfig
             {
-                GatewayIntents = GatewayIntents.GuildMembers
+                GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMembers
             };
 
             _client = new DiscordSocketClient(config);
