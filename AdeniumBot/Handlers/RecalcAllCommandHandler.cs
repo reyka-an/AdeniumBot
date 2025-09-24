@@ -25,7 +25,7 @@ namespace AdeniumBot.Handlers
             var helper = new HelperService(client, db);
             int userCount = guild.Users.Count;
             int dbCount = db.PlayerProfiles.Count();        
-            
+            int totalUsers = guild.MemberCount;
             await helper.GetOrCreateProfilesAsync(guild);
             int changed = await helper.RecalculateAllProfilesAsync(guild);
             await helper.UpdateRankRoleAsync(guild);
@@ -34,7 +34,8 @@ namespace AdeniumBot.Handlers
                 $"✅ Роли обновлены.\n" +
                 $"👥 Пользователей на сервере: **{userCount}**\n" +
                 $"📊 Профилей в БД: **{dbCount}**\n" +
-                $"🔄 Пересчитано профилей: **{changed}**",
+                $"🔄 Пересчитано профилей: **{changed}**" +
+                $"🔄 Типа точно все профили: **{totalUsers}**",
                 ephemeral: true);
         }
     }
