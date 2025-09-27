@@ -3,6 +3,7 @@ using System;
 using AdeniumBot.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AdeniumBot.Migrations
 {
     [DbContext(typeof(BotDbContext))]
-    partial class BotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250927174700_CentralizeFluentConfig_AddChecksAndIndexes")]
+    partial class CentralizeFluentConfig_AddChecksAndIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,84 +28,73 @@ namespace AdeniumBot.Migrations
             modelBuilder.Entity("AdeniumBot.Models.BlacklistLink", b =>
                 {
                     b.Property<int>("OwnerId")
-                        .HasColumnType("integer")
-                        .HasColumnName("owner_id");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TargetId")
-                        .HasColumnType("integer")
-                        .HasColumnName("target_id");
+                        .HasColumnType("integer");
 
                     b.HasKey("OwnerId", "TargetId");
 
                     b.HasIndex("TargetId");
 
-                    b.ToTable("blacklist_links", (string)null);
+                    b.ToTable("BlacklistLinks");
                 });
 
             modelBuilder.Entity("AdeniumBot.Models.FavoriteLink", b =>
                 {
                     b.Property<int>("OwnerId")
-                        .HasColumnType("integer")
-                        .HasColumnName("owner_id");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TargetId")
-                        .HasColumnType("integer")
-                        .HasColumnName("target_id");
+                        .HasColumnType("integer");
 
                     b.HasKey("OwnerId", "TargetId");
 
                     b.HasIndex("TargetId");
 
-                    b.ToTable("favorite_links", (string)null);
+                    b.ToTable("FavoriteLinks");
                 });
 
             modelBuilder.Entity("AdeniumBot.Models.PlayerProfile", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("DiscordUserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("discord_user_id");
+                        .HasColumnType("bigint");
 
                     b.Property<int>("Exp")
-                        .HasColumnType("integer")
-                        .HasColumnName("exp");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("username");
+                        .HasColumnType("character varying(64)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DiscordUserId")
                         .IsUnique();
 
-                    b.ToTable("player_profiles", null, t =>
+                    b.ToTable("PlayerProfiles", t =>
                         {
-                            t.HasCheckConstraint("ck_player_profiles_exp_nonneg", "exp >= 0");
+                            t.HasCheckConstraint("ck_player_profiles_exp_nonneg", "\"Exp\" >= 0");
                         });
                 });
 
             modelBuilder.Entity("AdeniumBot.Models.PlayerQuest", b =>
                 {
                     b.Property<int>("PlayerId")
-                        .HasColumnType("integer")
-                        .HasColumnName("player_id");
+                        .HasColumnType("integer");
 
                     b.Property<int>("QuestId")
-                        .HasColumnType("integer")
-                        .HasColumnName("quest_id");
+                        .HasColumnType("integer");
 
                     b.Property<int>("CompletedCount")
                         .HasColumnType("integer")
@@ -126,8 +118,7 @@ namespace AdeniumBot.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
@@ -169,8 +160,7 @@ namespace AdeniumBot.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
