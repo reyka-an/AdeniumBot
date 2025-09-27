@@ -47,7 +47,7 @@ namespace AdeniumBot.Services
             var idxToProfile = ids.Select(d => discordToProfile[d]).ToArray();
             
             const double Base = 1.0;
-            const double OneSided = 0.1;
+            const double OneSided = 0.02;
 
             var w = new double[n, n];
             for (int i = 0; i < n; i++)
