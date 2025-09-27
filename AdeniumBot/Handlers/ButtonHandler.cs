@@ -6,16 +6,19 @@ using System.Security.Cryptography;
 
 namespace AdeniumBot.Handlers
 {
+    /// <summary>
+    /// Обработчик нажатий кнопок в сообщении набора.
+    /// Добавляет игрока в набор и обновляет сообщение-«лобби».
+    /// Запускает распределение на пары, публикует результат и закрывает сессию.
+    /// </summary>
     public class ButtonHandler(
         DiscordSocketClient client,
         SessionStore store,
         SessionLifecycle lifecycle,
         PairingService pairing)
     {
-        private readonly SessionLifecycle _lifecycle = lifecycle;
-
-        private static readonly string[] JoinPhrases = new[]
-        {
+        private static readonly string[] JoinPhrases =
+        [
             "Ты в игре!",
             "Ура! Ты смог... наконец-то",
             "Ты справился! Твоя мама может тобой гордится",
@@ -37,10 +40,10 @@ namespace AdeniumBot.Handlers
             "Поздравляем! Теперь кому-то придётся терпеть тебя весь матч.",
             "Ты подписал контракт, теперь тебе до конца жизни нельзя банить Зайру.",
             "Вступил? Отлично, теперь у нас меньше шансов на победу."
-        };
+        ];
 
-        private static readonly string[] AlreadyJoinedPhrases = new[]
-        {
+        private static readonly string[] AlreadyJoinedPhrases =
+        [
             "У тебя деменция? Ты уже нажимал эту кнопку",
             "Ты уже жмал ><",
             "Серьёзно? Ещё раз?",
@@ -54,8 +57,11 @@ namespace AdeniumBot.Handlers
             "Кнопка работает один раз. Не жми, а то сломаешь.",
             "Дважды участвовать нельзя, даже если очень хочется.",
             "Ты уже в игре. Хочешь быть сразу за двух?"
-        };
+        ];
 
+        /// <summary>
+        /// Точка входа для любых компонент-взаимодействий
+        /// </summary>
         public async Task OnButtonAsync(SocketMessageComponent component)
         {
             var parts = component.Data.CustomId.Split(':');
@@ -69,15 +75,24 @@ namespace AdeniumBot.Handlers
                 case "begin":
                     await HandleBegin(parts, component);
                     break;
+                default:
+                    await component.RespondAsync("Неизвестная кнопка.", ephemeral: true);
+                    break;
             }
         }
 
+        /// <summary>
+        /// Возвращает случайную фразу из набора, при необходимости подставляя число участников.
+        /// </summary>
         private static string GetRandomPhrase(string[] pool, int count)
         {
             var index = RandomNumberGenerator.GetInt32(pool.Length);
             return string.Format(pool[index], count);
         }
 
+        /// <summary>
+        /// Добавляет игрока в набор и обновляет сообщение-«лобби».
+        /// </summary>
         private async Task HandleJoin(string[] parts, SocketMessageComponent component)
         {
             if (parts.Length < 2) { await component.RespondAsync("Некорректная кнопка.", ephemeral: true); return; }
@@ -103,6 +118,10 @@ namespace AdeniumBot.Handlers
             catch (Exception ex) { Console.WriteLine($"UpdateLobbyMessage error: {ex}"); }
         }
 
+        /// <summary>
+        /// Формирование пар, публикация результата,
+        /// отключение кнопок и закрытие сессии, защита от повторного запуска.
+        /// </summary>
         private async Task HandleBegin(string[] parts, SocketMessageComponent component)
         {
             if (parts.Length < 3) { await component.RespondAsync("Некорректная кнопка.", ephemeral: true); return; }
@@ -135,38 +154,58 @@ namespace AdeniumBot.Handlers
                 return;
             }
 
-            await component.DeferAsync(); 
-            
-            var result = await pairing.MakePairsAsync(participants);
-            
-            var lines = new List<string>();
-            foreach (var (a, b) in result.Pairs)
-                lines.Add($"• <@{a}> × <@{b}>");
-
-            if (result.Leftover is ulong left)
-                lines.Add($"\nОдинокий волк: <@{left}>");
-
-            var resultText =
-                $"**Итоговые пары:**\n" +
-                string.Join("\n", lines);
-
-            await component.Channel.SendMessageAsync($"**Результат распределения:**\n{resultText}");
-            
-            var disabled = new ComponentBuilder()
-                .WithButton(label: "Участвовать", customId: $"join:{sid}", style: ButtonStyle.Success, disabled: true)
-                .WithButton(label: "Старт", customId: $"begin:{sid}:{ownerId}", style: ButtonStyle.Primary, disabled: true)
-                .Build();
-
-            await component.Message.ModifyAsync(m =>
-            {
-                m.Content = $"{component.Message.Content}\n\n_Голосование завершено. Пары сформированы._";
-                m.Components = disabled;
-            });
-
-            s.Cts.Cancel();
+            // Предотвращаем повторный запуск
             store.RemoveSession(sid);
+
+            await component.DeferAsync();
+
+            try
+            {
+                var result = await pairing.MakePairsAsync(participants);
+
+                var lines = new List<string>();
+                foreach (var (a, b) in result.Pairs)
+                    lines.Add($"• <@{a}> × <@{b}>");
+
+                if (result.Leftover is { } left)
+                    lines.Add($"\nОдинокий волк: <@{left}>");
+
+                var resultText =
+                    $"**Итоговые пары:**\n" +
+                    string.Join("\n", lines);
+
+                // Завершаем взаимодействие
+                await component.FollowupAsync($"**Результат распределения:**\n{resultText}");
+
+                var disabled = new ComponentBuilder()
+                    .WithButton(label: "Участвовать", customId: $"join:{sid}", style: ButtonStyle.Success, disabled: true)
+                    .WithButton(label: "Старт", customId: $"begin:{sid}:{ownerId}", style: ButtonStyle.Primary, disabled: true)
+                    .Build();
+
+                await component.Message.ModifyAsync(m =>
+                {
+                    m.Content = $"{component.Message.Content}\n\n_Голосование завершено. Пары сформированы._";
+                    m.Components = disabled;
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Begin error: {ex}");
+                try
+                {
+                    await component.FollowupAsync("Произошла ошибка при формировании пар. Попробуй ещё раз позже.", ephemeral: true);
+                }
+                catch { /* игнорируем сбой ответа */ }
+            }
+            finally
+            {
+                try { s.Cts.Cancel(); } catch { /* ignore */ }
+            }
         }
 
+        /// <summary>
+        /// Обновляет «лобби»-сообщение (текст и кнопки) с текущим счётчиком участников.
+        /// </summary>
         private async Task UpdateLobbyMessageAsync(string sessionId, VoteSession s)
         {
             int count;
