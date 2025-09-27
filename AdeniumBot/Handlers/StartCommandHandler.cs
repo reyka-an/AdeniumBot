@@ -9,7 +9,7 @@ namespace AdeniumBot.Handlers
     /// Создаёт сессию набора в текущем канале, добавляет автора команды в участники
     /// и отправляет сообщение с кнопками «Участвовать» и «Старт».
     /// </summary>
-    public class StartCommandHandler(DiscordSocketClient client, SessionStore store, SessionLifecycle lifecycle)
+    public class StartCommandHandler(SessionStore store, SessionLifecycle lifecycle)
     {
         /// <summary>
         /// Таймаут авто-завершения сессии набора.
@@ -26,14 +26,7 @@ namespace AdeniumBot.Handlers
 
             try
             {
-                // Безопасная проверка типа канала
-                if (command.Channel is not ISocketMessageChannel msgChannel)
-                {
-                    await command.RespondAsync("Этот тип канала не поддерживается.", ephemeral: true);
-                    return;
-                }
-
-                var channelId = msgChannel.Id;
+                var channelId = command.Channel.Id;
 
                 // Не допускаем параллельных наборов в одном канале
                 if (store.TryGetSessionByChannel(channelId, out _))

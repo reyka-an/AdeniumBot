@@ -40,7 +40,7 @@ namespace AdeniumBot
             _sessions   = new SessionStore();
             _registrar  = new CommandRegistrar(_client);
             _lifecycle  = new SessionLifecycle(_client, _sessions);
-            _startHandler     = new StartCommandHandler(_client, _sessions, _lifecycle);
+            _startHandler     = new StartCommandHandler(_sessions, _lifecycle);
             _buttonHandler  = new ButtonHandler(_client, _sessions, _lifecycle, _pairing);
             _profileHandler   = new ProfileCommandHandler(_client);
             _relationsHandler = new RelationsCommandHandler();
