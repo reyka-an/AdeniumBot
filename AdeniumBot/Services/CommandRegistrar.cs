@@ -205,6 +205,14 @@ namespace AdeniumBot.Services
                 await guild.CreateApplicationCommandAsync(recalc.Build());
                 Console.WriteLine("Зарегистрирована команда /recalc_all");
             }
+            if (!cmds.Any(c => c.Name == "champion"))
+            {
+                var champion = new SlashCommandBuilder()
+                    .WithName("champion")
+                    .WithDescription("Выбрать случайного чемпиона из League of Legends");
+                await guild.CreateApplicationCommandAsync(champion.Build());
+                Console.WriteLine("Зарегистрирована команда /champion");
+            }
         }
     }
 }

@@ -21,6 +21,8 @@ namespace AdeniumBot
         private PairingService _pairing = default!;
         private AdeniumBot.Handlers.RoleExpRulesCommandHandler _roleExpRulesHandler = default!;
         private AdeniumBot.Handlers.RecalcAllCommandHandler _recalcAllHandler = default!;
+        private ChampionCommandHandler _championHandler = default!;
+
 
         public static Task Main(string[] args) => new Program().MainAsync();
 
@@ -46,6 +48,7 @@ namespace AdeniumBot
             _topHandler       = new AdeniumBot.Handlers.TopCommandHandler(_client);
             _roleExpRulesHandler = new AdeniumBot.Handlers.RoleExpRulesCommandHandler(_client);
             _recalcAllHandler = new AdeniumBot.Handlers.RecalcAllCommandHandler(_client);
+            _championHandler = new ChampionCommandHandler();
 
             var questHandler = new QuestCommandHandler(_client);
 
@@ -59,6 +62,7 @@ namespace AdeniumBot
             _client.SlashCommandExecuted += questHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _roleExpRulesHandler.OnSlashCommandAsync;
             _client.SlashCommandExecuted += _recalcAllHandler.OnSlashCommandAsync;
+            _client.SlashCommandExecuted += _championHandler.OnSlashCommandAsync;
 
             var token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             if (string.IsNullOrWhiteSpace(token))
