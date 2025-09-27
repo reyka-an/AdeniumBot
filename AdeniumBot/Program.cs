@@ -71,9 +71,6 @@ namespace AdeniumBot
                 Console.WriteLine("Задай переменную окружения DISCORD_TOKEN с токеном бота.");
                 return;
             }
-            var conn = Environment.GetEnvironmentVariable("DB_CONN_STRING");
-            await using var db = new BotDbContext(conn ?? "");
-            await db.Database.MigrateAsync();
             
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
